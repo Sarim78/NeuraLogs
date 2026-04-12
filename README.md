@@ -105,7 +105,7 @@ neuralogs/
 
 ## Privacy
 
-Neuralogs is designed with privacy first. Everything runs client-side in your browser. Your conversations are never sent to any server. Your API key is stored only in your local `.env.local` file and never committed to version control.
+Neuralogs runs entirely on your local machine. Your conversations never leave your computer, nothing is sent to any server, and your API key lives only in your local `.env.local` file which is never committed to version control.
 
 ---
 
