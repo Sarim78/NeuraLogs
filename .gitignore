@@ -1,0 +1,20 @@
+# environment variables
+.env.local
+.env*.local
+
+# never commit chat exports
+*.zip
+conversations.json
+
+# next.js
+.next/
+out/
+build/
+
+# dependencies
+node_modules/
+
+# misc
+.DS_Store
+*.pem
+.vercel
