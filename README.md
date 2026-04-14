@@ -1,6 +1,6 @@
 # Neuralogs
 
-> **⚠️ Under Active Development**: This project is a work in progress. Features may be incomplete, broken, or subject to change. Contributions and feedback are welcome.
+> **⚠️ Under Active Development**: This project is a work in progress. Features may be incomplete, broken, or subject to change.
 
 ---
 
