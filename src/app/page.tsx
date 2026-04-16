@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useBrainData } from "@/hooks/useBrainData"
-import NeuralGraph from "@/components/NeuralGraph"
-import FileUpload from "@/components/FileUpload"
-import ConvoDrawer from "@/components/ConvoDrawer"
-import DemoBanner from "@/components/DemoBanner"
-import TopicLegend from "@/components/TopicLegend"
-import NodeTooltip from "@/components/NodeTooltip"
-import { GraphNode } from "@/lib/types"
+import { useBrainData } from "../hooks/useBrainData"
+import NeuralGraph from "../components/NeuralGraph"
+import FileUpload from "../components/FileUpload"
+import ConvoDrawer from "../components/ConvoDrawer"
+import DemoBanner from "../components/DemoBanner"
+import TopicLegend from "../components/TopicLegend"
+import NodeTooltip from "../components/NodeTooltip"
+import { GraphNode } from "../lib/types"
+import "./globals.css"
 
 export default function Home() {
   const { status, error, conversations, graphData, processFile, reset } =
@@ -29,12 +30,10 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
-      {/* demo banner */}
       {isDemo && showBanner && (
         <DemoBanner onDismiss={() => setShowBanner(false)} />
       )}
 
-      {/* title */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 text-center">
         <h1 className="text-white/80 text-sm font-medium tracking-widest uppercase">
           Neuralogs
@@ -44,7 +43,6 @@ export default function Home() {
         </p>
       </div>
 
-      {/* upload or graph */}
       {!graphData ? (
         <div className="absolute inset-0 flex items-center justify-center px-8">
           <div className="w-full max-w-md flex flex-col gap-4">
@@ -59,7 +57,6 @@ export default function Home() {
         </div>
       ) : (
         <>
-          {/* neural graph */}
           <div className="absolute inset-0">
             <NeuralGraph
               data={graphData}
@@ -67,10 +64,8 @@ export default function Home() {
             />
           </div>
 
-          {/* topic legend */}
           <TopicLegend />
 
-          {/* reset button */}
           <button
             onClick={reset}
             className="absolute top-6 right-6 z-40 text-white/30 hover:text-white text-xs transition-colors border border-white/10 rounded-lg px-3 py-1.5"
@@ -78,13 +73,11 @@ export default function Home() {
             Reset
           </button>
 
-          {/* conversation drawer */}
           <ConvoDrawer
             conversation={selectedConvo}
             onClose={() => setSelectedId(null)}
           />
 
-          {/* tooltip */}
           {tooltip && (
             <NodeTooltip
               title={tooltip.node.title}
