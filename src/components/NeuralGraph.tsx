@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import * as d3 from "d3"
-import { GraphData, GraphNode, GraphEdge } from "@/lib/types"
+import { GraphData, GraphNode } from "../lib/types"
 
 const TOPIC_COLORS: Record<string, string> = {
   Tech: "#6366f1",
@@ -18,9 +18,14 @@ const TOPIC_COLORS: Record<string, string> = {
 interface NeuralGraphProps {
   data: GraphData
   onNodeClick: (id: string) => void
+  onNodeHover: (node: GraphNode | null, x: number, y: number) => void
 }
 
-export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
+export default function NeuralGraph({
+  data,
+  onNodeClick,
+  onNodeHover,
+}: NeuralGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
@@ -29,7 +34,6 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
     const width = svgRef.current.clientWidth
     const height = svgRef.current.clientHeight
 
-    // clear previous render
     d3.select(svgRef.current).selectAll("*").remove()
 
     const svg = d3
@@ -37,7 +41,6 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
       .attr("width", width)
       .attr("height", height)
 
-    // D3 force simulation
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -51,7 +54,6 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(20))
 
-    // draw edges
     const link = svg
       .append("g")
       .selectAll("line")
@@ -60,7 +62,6 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
       .attr("stroke", "rgba(255,255,255,0.08)")
       .attr("stroke-width", 1)
 
-    // draw nodes
     const node = svg
       .append("g")
       .selectAll("circle")
@@ -72,16 +73,28 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("stroke-width", 1.5)
       .attr("cursor", "pointer")
-      .on("click", (_event, d) => onNodeClick(d.id))
-      .on("mouseover", function () {
-        d3.select(this).attr("fill-opacity", 1).attr("r", function () {
-          return +d3.select(this).attr("r") + 3
-        })
+      .on("click", (event, d) => {
+        event.stopPropagation()
+        onNodeClick(d.id)
+      })
+      .on("mouseover", function (event, d) {
+        d3.select(this)
+          .attr("fill-opacity", 1)
+          .attr("r", Math.max(4, Math.min(12, d.messageCount / 2)) + 3)
+        onNodeHover(d, event.pageX, event.pageY)
+      })
+      .on("mousemove", function (event) {
+        onNodeHover(
+          d3.select(this).datum() as GraphNode,
+          event.pageX,
+          event.pageY
+        )
       })
       .on("mouseout", function (_, d) {
         d3.select(this)
           .attr("fill-opacity", 0.85)
           .attr("r", Math.max(4, Math.min(12, d.messageCount / 2)))
+        onNodeHover(null, 0, 0)
       })
       .call(
         d3
@@ -102,7 +115,6 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
           })
       )
 
-    // tick update
     simulation.on("tick", () => {
       link
         .attr("x1", (d: any) => d.source.x)
@@ -116,13 +128,13 @@ export default function NeuralGraph({ data, onNodeClick }: NeuralGraphProps) {
     return () => {
       simulation.stop()
     }
-  }, [data, onNodeClick])
+  }, [data, onNodeClick, onNodeHover])
 
   return (
     <svg
       ref={svgRef}
       className="w-full h-full"
-      style={{ background: "transparent" }}
+      style={{ background: "transparent", cursor: "default" }}
     />
   )
 }

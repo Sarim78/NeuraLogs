@@ -9,7 +9,6 @@ import DemoBanner from "../components/DemoBanner"
 import TopicLegend from "../components/TopicLegend"
 import NodeTooltip from "../components/NodeTooltip"
 import { GraphNode } from "../lib/types"
-import "./globals.css"
 
 export default function Home() {
   const { status, error, conversations, graphData, processFile, reset } =
@@ -27,6 +26,18 @@ export default function Home() {
     conversations.find((c) => c.id === selectedId) || null
 
   const isDemo = status === "idle"
+
+  function handleNodeClick(id: string) {
+    setSelectedId(id)
+  }
+
+  function handleNodeHover(node: GraphNode | null, x: number, y: number) {
+    if (node) {
+      setTooltip({ node, x, y })
+    } else {
+      setTooltip(null)
+    }
+  }
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
@@ -60,7 +71,8 @@ export default function Home() {
           <div className="absolute inset-0">
             <NeuralGraph
               data={graphData}
-              onNodeClick={(id) => setSelectedId(id)}
+              onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
             />
           </div>
 
