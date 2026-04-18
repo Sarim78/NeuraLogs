@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Conversation, GraphData } from "@/lib/types"
-import { extractConversations } from "@/lib/unzip"
-import { parseConversations } from "@/lib/parser"
-import { clusterConversations } from "@/lib/clusterer"
-import { buildGraph } from "@/lib/graph"
+import { Conversation, GraphData } from "../lib/types"
+import { extractConversations } from "../lib/unzip"
+import { parseConversations } from "../lib/parser"
+import { clusterConversations } from "../lib/clusterer"
+import { buildGraph } from "../lib/graph"
 
 type Status = "idle" | "unzipping" | "parsing" | "clustering" | "done" | "error"
 
@@ -23,9 +23,9 @@ export function useBrainData() {
       setStatus("parsing")
       const parsed = parseConversations(raw)
 
-      // step 3 — cluster topics via Claude API
+      // step 3 — cluster topics via keywords
       setStatus("clustering")
-      const clustered = await clusterConversations(parsed)
+      const clustered = clusterConversations(parsed)
       setConversations(clustered)
 
       // step 4 — build graph

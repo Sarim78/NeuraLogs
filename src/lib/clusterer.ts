@@ -1,43 +1,22 @@
-import Anthropic from "@anthropic-ai/sdk"
 import { Conversation } from "./types"
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+function detectTopic(text: string): string {
+  const lower = text.toLowerCase()
 
-// tag a single conversation with a topic
-async function tagConversation(convo: Conversation): Promise<string> {
-  const firstMessage = convo.messages[0]?.content || convo.title
+  if (/code|python|javascript|typescript|bug|error|api|database|programming|software|github|react|next|node|css|html|function|class|array|object/.test(lower)) return "Tech"
+  if (/workout|diet|sleep|doctor|health|pain|medicine|mental|anxiety|depression|fitness|nutrition|calories|exercise/.test(lower)) return "Health"
+  if (/money|invest|budget|finance|crypto|stock|savings|debt|income|tax|bank|salary|price/.test(lower)) return "Finance"
+  if (/resume|job|interview|career|internship|work|hire|linkedin|portfolio|promotion|manager/.test(lower)) return "Career"
+  if (/essay|write|story|creative|design|art|poem|script|blog|content|novel|draw/.test(lower)) return "Creative"
+  if (/study|learn|course|exam|school|university|homework|assignment|lecture|research|notes/.test(lower)) return "Learning"
+  if (/friend|family|relationship|feel|emotion|personal|life|advice|help|love|breakup/.test(lower)) return "Personal"
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 10,
-    messages: [
-      {
-        role: "user",
-        content: `Categorize this conversation in one word. Choose from: Tech, Health, Finance, Career, Creative, Learning, Personal, Other. Reply with just the one word, nothing else.\n\nConversation: "${firstMessage}"`,
-      },
-    ],
-  })
-
-  const topic = (response.content[0] as any).text.trim()
-  return topic || "Other"
+  return "Other"
 }
 
-// tag all conversations
-export async function clusterConversations(
-  conversations: Conversation[]
-): Promise<Conversation[]> {
-  const tagged = await Promise.all(
-    conversations.map(async (convo) => {
-      try {
-        const topic = await tagConversation(convo)
-        return { ...convo, topic }
-      } catch {
-        return { ...convo, topic: "Other" }
-      }
-    })
-  )
-
-  return tagged
+export function clusterConversations(conversations: Conversation[]): Conversation[] {
+  return conversations.map((convo) => {
+    const text = convo.title + " " + (convo.messages[0]?.content || "")
+    return { ...convo, topic: detectTopic(text) }
+  })
 }
