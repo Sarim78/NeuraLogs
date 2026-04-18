@@ -48,11 +48,13 @@ export default function NeuralGraph({
         d3
           .forceLink(data.edges as any)
           .id((d: any) => d.id)
-          .distance(80)
+          .distance(60)
       )
-      .force("charge", d3.forceManyBody().strength(-120))
+      .force("charge", d3.forceManyBody().strength(-30))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(20))
+      .force("collision", d3.forceCollide().radius(15))
+      .force("x", d3.forceX(width / 2).strength(0.05))
+      .force("y", d3.forceY(height / 2).strength(0.05))
 
     const link = svg
       .append("g")
