@@ -1,6 +1,6 @@
 # Neuralogs
 
-> **⚠️ Under Active Development**: This project is a work in progress. Features may be incomplete, broken, or subject to change.
+> **⚠️ Under Active Development**: This project is a work in progress. Features may be incomplete, broken, or subject to change. Contributions and feedback are welcome.
 
 ---
 
@@ -25,7 +25,6 @@ Upload your Claude or ChatGPT conversation export and watch it transform into an
 ### Prerequisites
 
 - Node.js 18+
-- An Anthropic API key, get one free at [console.anthropic.com](https://console.anthropic.com)
 
 ### Installation
 
@@ -33,20 +32,6 @@ Upload your Claude or ChatGPT conversation export and watch it transform into an
 git clone https://github.com/Sarim78/neuralogs.git
 cd neuralogs
 npm install
-```
-
-### Environment Setup
-
-Create a `.env.local` file in the root of the project:
-
-```bash
-cp .env.example .env.local
-```
-
-Open `.env.local` and add your Anthropic API key:
-
-```
-ANTHROPIC_API_KEY=your_key_here
 ```
 
 ### Run Locally
@@ -82,7 +67,6 @@ Once downloaded, drag and drop the `.zip` directly into Neuralogs.
 - **Tailwind CSS** for styling and dark theme
 - **JSZip** for client-side zip extraction
 - **Framer Motion** for animations
-- **Claude API** for intelligent topic clustering
 
 ---
 
@@ -97,7 +81,6 @@ neuralogs/
 │   ├── components/             # UI components
 │   ├── lib/                    # core logic (parser, clusterer, graph)
 │   └── hooks/                  # React hooks
-├── .env.example                # environment variable template
 └── README.md
 ```
 
@@ -105,12 +88,10 @@ neuralogs/
 
 ## Privacy
 
-Neuralogs runs entirely on your local machine. Your conversations never leave your computer, nothing is sent to any server, and your API key lives only in your local `.env.local` file which is never committed to version control.
+Neuralogs runs entirely on your local machine. Your conversations never leave your computer and nothing is sent to any server.
 
 ---
 
 ## License
 
 MIT, free to use, modify, and distribute.
-
----
