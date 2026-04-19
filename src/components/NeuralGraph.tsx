@@ -41,6 +41,18 @@ export default function NeuralGraph({
       .attr("width", width)
       .attr("height", height)
 
+    // zoomable container
+    const container = svg.append("g")
+
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        container.attr("transform", event.transform)
+      })
+
+    svg.call(zoom)
+
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -48,28 +60,28 @@ export default function NeuralGraph({
         d3
           .forceLink(data.edges as any)
           .id((d: any) => d.id)
-          .distance(60)
+          .distance(80)
       )
-      .force("charge", d3.forceManyBody().strength(-30))
+      .force("charge", d3.forceManyBody().strength(-50))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(15))
-      .force("x", d3.forceX(width / 2).strength(0.05))
-      .force("y", d3.forceY(height / 2).strength(0.05))
+      .force("collision", d3.forceCollide().radius((d: any) => Math.max(6, Math.min(14, d.messageCount / 2)) + 4))
+      .force("x", d3.forceX(width / 2).strength(0.03))
+      .force("y", d3.forceY(height / 2).strength(0.03))
 
-    const link = svg
+    const link = container
       .append("g")
       .selectAll("line")
       .data(data.edges)
       .join("line")
-      .attr("stroke", "rgba(255,255,255,0.08)")
-      .attr("stroke-width", 1)
+      .attr("stroke", "rgba(255,255,255,0.06)")
+      .attr("stroke-width", 0.8)
 
-    const node = svg
+    const node = container
       .append("g")
       .selectAll("circle")
       .data(data.nodes)
       .join("circle")
-      .attr("r", (d) => Math.max(4, Math.min(12, d.messageCount / 2)))
+      .attr("r", (d) => Math.max(4, Math.min(14, d.messageCount / 2)))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("fill-opacity", 0.85)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
@@ -82,7 +94,7 @@ export default function NeuralGraph({
       .on("mouseover", function (event, d) {
         d3.select(this)
           .attr("fill-opacity", 1)
-          .attr("r", Math.max(4, Math.min(12, d.messageCount / 2)) + 3)
+          .attr("r", Math.max(4, Math.min(14, d.messageCount / 2)) + 3)
         onNodeHover(d, event.pageX, event.pageY)
       })
       .on("mousemove", function (event) {
@@ -95,7 +107,7 @@ export default function NeuralGraph({
       .on("mouseout", function (_, d) {
         d3.select(this)
           .attr("fill-opacity", 0.85)
-          .attr("r", Math.max(4, Math.min(12, d.messageCount / 2)))
+          .attr("r", Math.max(4, Math.min(14, d.messageCount / 2)))
         onNodeHover(null, 0, 0)
       })
       .call(
@@ -136,7 +148,7 @@ export default function NeuralGraph({
     <svg
       ref={svgRef}
       className="w-full h-full"
-      style={{ background: "transparent", cursor: "default" }}
+      style={{ background: "transparent", cursor: "grab" }}
     />
   )
 }
