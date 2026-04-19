@@ -31,25 +31,22 @@ export function buildGraph(conversations: Conversation[]): GraphData {
     }
   }
 
-  // connect within same topic — chain style so it looks like a cluster
+  // connect within same topic in a ring so it looks like a cluster
   Object.values(topicMap).forEach((ids) => {
-    for (let i = 0; i < ids.length - 1; i++) {
-      addEdge(ids[i], ids[i + 1])
-    }
-    // add a few extra connections for density
-    for (let i = 0; i < Math.min(ids.length, 5); i++) {
-      const j = Math.floor(Math.random() * ids.length)
-      if (i !== j) addEdge(ids[i], ids[j])
+    for (let i = 0; i < ids.length; i++) {
+      addEdge(ids[i], ids[(i + 1) % ids.length])
+      if (ids.length > 4) {
+        addEdge(ids[i], ids[(i + 2) % ids.length])
+      }
     }
   })
 
-  // connect every topic cluster to every other — makes one big brain
+  // connect every topic to every other topic with bridge edges
   const topicKeys = Object.keys(topicMap)
   for (let i = 0; i < topicKeys.length; i++) {
     for (let j = i + 1; j < topicKeys.length; j++) {
       const aIds = topicMap[topicKeys[i]]
       const bIds = topicMap[topicKeys[j]]
-      // 3 bridge edges between every pair of topics
       const bridges = Math.min(3, aIds.length, bIds.length)
       for (let k = 0; k < bridges; k++) {
         addEdge(aIds[k % aIds.length], bIds[k % bIds.length])
