@@ -86,12 +86,28 @@ neuralogs/
 
 ---
 
-## Privacy
+## Privacy and Data Safety
 
-Neuralogs runs entirely on your local machine. Your conversations never leave your computer and nothing is sent to any server.
+Neuralogs has no backend, no database, and no server. There is nowhere for your data to go.
+
+When you upload your zip file, it is opened and processed entirely inside your own browser using JavaScript. Your conversations are never transmitted over the internet, never stored on any server, and never seen by anyone other than you. The moment you close or refresh the tab, everything is gone.
+
+This is not a promise or a policy; it is how the technology works. A client-side only application is physically incapable of sending your data anywhere without your knowledge.
+
+You are not creating an account. You are not agreeing to the terms of service. You are not handing your data to a third party. You are running a local tool that reads a file on your machine and draws a graph on your screen.
+
+---
+
+## Disclaimer
+
+Neuralogs is an open source personal project provided as-is with no warranties. It is not affiliated with Anthropic or OpenAI. Your chat export files belong to you and are processed exclusively on your own machine.
 
 ---
 
 ## License
 
 MIT, free to use, modify, and distribute.
+
+---
+
+Built by [Sarim Siddiqui](https://github.com/Sarim78)
