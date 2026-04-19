@@ -4,7 +4,6 @@ export function buildGraph(conversations: Conversation[]): GraphData {
   const nodes: GraphNode[] = []
   const edges: GraphEdge[] = []
 
-  // build a node for each conversation
   conversations.forEach((convo) => {
     nodes.push({
       id: convo.id,
@@ -15,7 +14,6 @@ export function buildGraph(conversations: Conversation[]): GraphData {
     })
   })
 
-  // build edges between conversations that share the same topic
   const topicMap: Record<string, string[]> = {}
 
   conversations.forEach((convo) => {
@@ -24,14 +22,19 @@ export function buildGraph(conversations: Conversation[]): GraphData {
     topicMap[topic].push(convo.id)
   })
 
-  // connect nodes within the same topic cluster
+  // limit each node to max 3 edges so clusters don't collapse into a ball
+  const edgeCount: Record<string, number> = {}
+
   Object.values(topicMap).forEach((ids) => {
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
-        edges.push({
-          source: ids[i],
-          target: ids[j],
-        })
+        const a = ids[i]
+        const b = ids[j]
+        if ((edgeCount[a] || 0) >= 3) continue
+        if ((edgeCount[b] || 0) >= 3) continue
+        edges.push({ source: a, target: b })
+        edgeCount[a] = (edgeCount[a] || 0) + 1
+        edgeCount[b] = (edgeCount[b] || 0) + 1
       }
     }
   })
