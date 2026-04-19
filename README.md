@@ -107,7 +107,3 @@ Neuralogs is an open source personal project provided as-is with no warranties. 
 ## License
 
 MIT, free to use, modify, and distribute.
-
----
-
-Built by [Sarim Siddiqui](https://github.com/Sarim78)
