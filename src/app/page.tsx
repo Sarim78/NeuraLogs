@@ -41,19 +41,35 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
+
+      {/* demo banner */}
       {isDemo && showBanner && (
         <DemoBanner onDismiss={() => setShowBanner(false)} />
       )}
 
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 text-center">
-        <h1 className="text-white/80 text-sm font-medium tracking-widest uppercase">
-          Neuralogs
-        </h1>
-        <p className="text-white/30 text-xs mt-0.5">
-          your mind, visualized
+      {/* top bar */}
+      <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 h-12 border-b border-white/5 backdrop-blur-sm">
+        <p className="text-white font-bold text-xs">
+          All processing happens locally. No data is collected or transmitted.
         </p>
+        <div className="text-center absolute left-1/2 -translate-x-1/2">
+          <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
+            Neuralogs
+          </h1>
+          <p className="text-white/30 text-xs">your mind, visualized</p>
+        </div>
+        {graphData && (
+          <button
+            onClick={reset}
+            className="text-white/40 hover:text-white text-xs transition-colors border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5"
+          >
+            Reset
+          </button>
+        )}
+        {!graphData && <div />}
       </div>
 
+      {/* upload screen */}
       {!graphData ? (
         <div className="absolute inset-0 flex items-center justify-center px-8">
           <div className="w-full max-w-md flex flex-col gap-4">
@@ -68,7 +84,8 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <div className="absolute inset-0">
+          {/* neural graph */}
+          <div className="absolute inset-0 pt-12">
             <NeuralGraph
               data={graphData}
               onNodeClick={handleNodeClick}
@@ -76,20 +93,16 @@ export default function Home() {
             />
           </div>
 
+          {/* topic legend */}
           <TopicLegend />
 
-          <button
-            onClick={reset}
-            className="absolute top-6 right-6 z-40 text-white/30 hover:text-white text-xs transition-colors border border-white/10 rounded-lg px-3 py-1.5"
-          >
-            Reset
-          </button>
-
+          {/* conversation drawer */}
           <ConvoDrawer
             conversation={selectedConvo}
             onClose={() => setSelectedId(null)}
           />
 
+          {/* tooltip */}
           {tooltip && (
             <NodeTooltip
               title={tooltip.node.title}
