@@ -3,19 +3,50 @@ import { Conversation } from "./types"
 function detectTopic(text: string): string {
   const lower = text.toLowerCase()
 
-  if (/code|python|javascript|typescript|bug|error|api|database|programming|software|github|react|next|node|css|html|function|class|array|object|algorithm|terminal|deploy|server|git|component|library|framework|debugging|compiler|syntax|variable|loop|recursion|sql|query|backend|frontend|fullstack|devops|docker|aws|cloud|linux|bash|script|json|rest|graphql|endpoint|authentication|encryption|cybersecurity|network|packet|firewall|malware|exploit|vulnerability|assembly|c\+\+|java|rust|golang|swift|kotlin|flutter|mobile|app|security|hacking|kali|nmap|wireshark|arm|register|memory|pointer|heap|stack|binary|hex|bit|byte|integer|string|data|struct|type|interface|module|import|export|build|compile|test|debug|fix|implement|create|project|system|tool|file|directory|path|command|install|setup|config|environment|machine learning|neural|model|training|dataset|ai|artificial|intelligence|nlp|computer|hardware|software|web|site|page|browser|chrome|firefox|http|https|url|domain|hosting|vercel|netlify|vite|webpack|eslint|prettier|tailwind|bootstrap|sass|css|svg|canvas|animation|api|fetch|axios|promise|async|await|callback|event|listener|dom|react|vue|angular|svelte|express|fastapi|django|flask|spring|rails|laravel|php|ruby|scala|haskell|elixir|clojure|erlang|ocaml|scheme|lisp|prolog|fortran|cobol|pascal|delphi|matlab|r|julia|dart|lua|perl|groovy|gradle|maven|npm|yarn|pip|cargo|gem|composer/.test(lower)) return "Tech"
+  // Tech subtopics
+  if (/cybersecurity|security|hacking|kali|nmap|wireshark|exploit|vulnerability|malware|firewall|penetration|pentest|ctf|reverse engineer|forensic|incident|threat|attack|defense|encryption|decrypt|cipher|hash|ssl|tls|certificate|authentication|authorization|oauth|jwt|xss|sql injection|csrf|buffer overflow|privilege escalation|payload|shellcode|rootkit|backdoor|trojan|ransomware|phishing|social engineering/.test(lower)) return "Cybersecurity"
 
-  if (/workout|diet|sleep|doctor|health|pain|medicine|mental|anxiety|depression|fitness|nutrition|calories|exercise|symptom|diagnosis|therapy|wellness|meditation|stress|injury|hospital|supplement|vitamin|weight|muscle|cardio|running|yoga|stretching|recovery|immune|chronic|disease|condition|prescription|pharmacy|surgeon|nurse|clinic|appointment|checkup|blood|heart|lung|kidney|liver|brain|spine|joint|bone|skin|cancer|diabetes|allergy|asthma|migraine|fatigue|insomnia|nausea|fever|cold|flu|covid|vaccine|hygiene|dental|vision|hearing/.test(lower)) return "Health"
+  if (/machine learning|neural network|deep learning|model|training|dataset|ai|artificial intelligence|nlp|natural language|computer vision|tensorflow|pytorch|scikit|keras|hugging face|llm|gpt|claude|chatgpt|embedding|vector|transformer|attention|reinforcement|supervised|unsupervised|classification|regression|clustering|feature|epoch|gradient|backprop|overfitting|underfitting|accuracy|precision|recall|f1/.test(lower)) return "AI & ML"
 
-  if (/money|invest|budget|finance|crypto|stock|savings|debt|income|tax|bank|salary|price|revenue|profit|loss|market|trading|portfolio|dividend|mortgage|insurance|expense|wealth|fund|etf|bitcoin|ethereum|blockchain|nft|defi|wallet|transaction|payment|invoice|accounting|audit|financial|economic|gdp|inflation|interest|rate|loan|credit|debit|cash|currency|exchange|forex|commodity|gold|silver|real estate|property|rent|lease|asset|liability|equity|capital|venture|angel|seed|ipo|acquisition|merger|valuation|startup funding/.test(lower)) return "Finance"
+  if (/react|next|vue|angular|svelte|html|css|tailwind|bootstrap|sass|frontend|ui|ux|component|webpage|website|landing page|responsive|mobile design|figma|wireframe|prototype|design system|typography|color|layout|grid|flexbox|animation|transition|hover|click|button|form|input|modal|navbar|sidebar|dashboard|dark mode/.test(lower)) return "Web Dev"
 
-  if (/resume|job|interview|career|internship|work|hire|linkedin|promotion|manager|workplace|offer|recruiter|cover letter|profession|employment|fired|quit|startup|business|entrepreneur|boss|colleague|team|meeting|deadline|project management|agile|scrum|sprint|roadmap|okr|kpi|performance|review|feedback|onboarding|remote|hybrid|office|salary negotiation|raise|benefits|equity|stock option|reference|network|connection|opportunity|role|position|title|company|organization|department|hr|human resources/.test(lower)) return "Career"
+  if (/sql|database|postgres|mysql|mongodb|redis|firebase|supabase|prisma|orm|query|schema|table|index|join|migration|crud|nosql|graphql|rest api|endpoint|backend|express|fastapi|django|flask|node|server|microservice|docker|kubernetes|nginx|load balancer/.test(lower)) return "Backend"
 
-  if (/essay|write|story|creative|design|art|poem|script|blog|content|novel|draw|music|song|lyrics|paint|photograph|video|film|animation|brand|logo|color|typography|illustration|sketch|fiction|narrative|character|plot|setting|dialogue|scene|chapter|draft|edit|publish|portfolio|gallery|exhibition|performance|theater|dance|sculpture|pottery|craft|knit|sew|cook|recipe|bake|decorate|interior|fashion|style|aesthetic|mood board|inspiration|concept|pitch|storyboard|wireframe|prototype|mockup|ui|ux/.test(lower)) return "Creative"
+  if (/aws|azure|gcp|cloud|vercel|netlify|heroku|lambda|serverless|s3|ec2|iam|vpc|terraform|ansible|ci\/cd|github actions|devops|deployment|infrastructure|monitoring|logging|scaling|container|pipeline/.test(lower)) return "Cloud & DevOps"
 
-  if (/study|learn|course|exam|school|university|homework|assignment|lecture|research|notes|textbook|degree|grade|professor|student|tutorial|explain|understand|concept|theory|math|physics|chemistry|biology|history|geography|literature|philosophy|psychology|sociology|economics|political|science|engineering|architecture|law|medicine|education|training|certification|bootcamp|workshop|seminar|conference|paper|thesis|dissertation|citation|reference|bibliography|experiment|hypothesis|analysis|conclusion|summary|review|quiz|test|midterm|final|gpa|scholarship|admission|application|college|high school|middle school|elementary|kindergarten|preschool/.test(lower)) return "Learning"
+  if (/python|javascript|typescript|java|c\+\+|c#|rust|golang|swift|kotlin|ruby|php|scala|haskell|assembly|arm|register|memory|pointer|heap|stack|binary|hex|bit|byte|compiler|interpreter|syntax|variable|loop|recursion|algorithm|data structure|linked list|tree|graph|sorting|searching|big o|complexity/.test(lower)) return "Programming"
 
-  if (/friend|family|relationship|feel|emotion|personal|life|advice|help|love|breakup|dating|marriage|divorce|loneliness|happiness|sad|angry|grateful|motivation|goal|habit|routine|mindset|confidence|self|identity|purpose|meaning|value|belief|spiritual|religion|faith|prayer|gratitude|journal|reflect|grow|heal|trauma|grief|loss|death|funeral|birthday|celebration|holiday|vacation|travel|trip|adventure|experience|memory|nostalgia|childhood|parent|sibling|child|partner|spouse|ex|crush|friend group|social|party|event|gathering|community|volunteer|charity|cause|activist|protest|politics|opinion|debate|argue|conflict|resolve|forgive|apologize|boundary|toxic|support|encourage|inspire/.test(lower)) return "Personal"
+  if (/data|analytics|visualization|tableau|power bi|excel|pandas|numpy|matplotlib|seaborn|plotly|d3|dashboard|report|insight|metric|kpi|etl|pipeline|warehouse|spark|hadoop|kafka|airflow|dbt|looker|bi|business intelligence/.test(lower)) return "Data & Analytics"
+
+  // Health subtopics
+  if (/workout|fitness|exercise|gym|muscle|cardio|running|yoga|stretching|weight|calories|protein|nutrition|diet|meal|supplement|vitamin|sleep|recovery|injury|pain|physio/.test(lower)) return "Fitness"
+  if (/mental|anxiety|depression|stress|therapy|mindfulness|meditation|emotion|mood|wellbeing|psychology|counseling|burnout|trauma|grief|loneliness/.test(lower)) return "Mental Health"
+  if (/doctor|hospital|medicine|symptom|diagnosis|prescription|surgery|nurse|clinic|appointment|checkup|blood|heart|lung|kidney|disease|condition|allergy|vaccine/.test(lower)) return "Medical"
+
+  // Finance subtopics
+  if (/stock|invest|market|trading|portfolio|etf|dividend|crypto|bitcoin|ethereum|defi|nft|blockchain|fund|index/.test(lower)) return "Investing"
+  if (/budget|expense|savings|debt|income|tax|salary|mortgage|insurance|bank|loan|credit|cash|financial plan/.test(lower)) return "Personal Finance"
+  if (/startup|business|revenue|profit|loss|venture|funding|pitch|investor|valuation|acquisition|merger|entrepreneur/.test(lower)) return "Business"
+
+  // Career subtopics
+  if (/resume|interview|job|hire|recruiter|cover letter|linkedin|offer|application|portfolio/.test(lower)) return "Job Search"
+  if (/promotion|manager|leadership|team|meeting|workplace|performance|review|feedback|career growth/.test(lower)) return "Career Growth"
+
+  // Creative subtopics
+  if (/write|essay|story|novel|fiction|poem|script|blog|content|narrative|character|plot|draft|edit|publish/.test(lower)) return "Writing"
+  if (/design|art|draw|paint|illustration|sketch|logo|brand|color|typography|ui|ux|figma|graphic|visual/.test(lower)) return "Design"
+  if (/music|song|lyrics|beat|produce|record|guitar|piano|melody|chord|mix|master/.test(lower)) return "Music"
+
+  // Learning subtopics
+  if (/math|calculus|algebra|statistics|probability|discrete|linear algebra|differential/.test(lower)) return "Math"
+  if (/study|exam|school|university|homework|assignment|lecture|notes|textbook|degree|grade|professor|course|tutorial/.test(lower)) return "School"
+  if (/research|paper|thesis|dissertation|experiment|hypothesis|analysis|science|physics|chemistry|biology|history|philosophy/.test(lower)) return "Research"
+
+  // Personal subtopics
+  if (/friend|family|relationship|love|breakup|dating|marriage|divorce|partner|spouse/.test(lower)) return "Relationships"
+  if (/goal|habit|routine|mindset|confidence|motivation|self|identity|purpose|meaning|grow|improve|productivity/.test(lower)) return "Self Improvement"
+  if (/travel|trip|vacation|adventure|explore|country|city|hotel|flight|itinerary/.test(lower)) return "Travel"
+  if (/food|recipe|cook|bake|restaurant|meal|cuisine|ingredient|kitchen/.test(lower)) return "Food"
 
   return "Other"
 }
