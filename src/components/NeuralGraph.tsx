@@ -52,6 +52,7 @@ export default function NeuralGraph({
 
     svg.call(zoom)
 
+    // run simulation fully before rendering to eliminate glitchiness
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -66,8 +67,11 @@ export default function NeuralGraph({
       .force("collision", d3.forceCollide().radius((d: any) => Math.max(6, Math.min(14, d.messageCount / 2)) + 4))
       .force("x", d3.forceX(width / 2).strength(0.03))
       .force("y", d3.forceY(height / 2).strength(0.03))
+      .alphaDecay(0.05)
+      .stop()
 
-    simulation.alphaDecay(0.05)
+    // pre-run simulation ticks so nodes start in place
+    for (let i = 0; i < 300; i++) simulation.tick()
 
     const link = container
       .append("g")
@@ -76,6 +80,10 @@ export default function NeuralGraph({
       .join("line")
       .attr("stroke", "rgba(255,255,255,0.06)")
       .attr("stroke-width", 0.8)
+      .attr("x1", (d: any) => d.source.x)
+      .attr("y1", (d: any) => d.source.y)
+      .attr("x2", (d: any) => d.target.x)
+      .attr("y2", (d: any) => d.target.y)
 
     const node = container
       .append("g")
@@ -88,6 +96,8 @@ export default function NeuralGraph({
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("stroke-width", 1.5)
       .attr("cursor", "pointer")
+      .attr("cx", (d: any) => d.x)
+      .attr("cy", (d: any) => d.y)
       .on("click", (event, d) => {
         event.stopPropagation()
         onNodeClick(d.id)
@@ -130,6 +140,7 @@ export default function NeuralGraph({
           })
       )
 
+    // restart for drag interactions only
     simulation.on("tick", () => {
       link
         .attr("x1", (d: any) => d.source.x)
@@ -139,6 +150,8 @@ export default function NeuralGraph({
 
       node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y)
     })
+
+    simulation.restart()
 
     return () => {
       simulation.stop()
