@@ -51,6 +51,8 @@ export default function NeuralGraph({
 
     const width = svgRef.current.clientWidth
     const height = svgRef.current.clientHeight
+    const cx = width / 2
+    const cy = height / 2
 
     d3.select(svgRef.current).selectAll("*").remove()
 
@@ -61,9 +63,7 @@ export default function NeuralGraph({
 
     const container = svg.append("g")
 
-    // set initial transform so zoom starts centered
-    const initialTransform = d3.zoomIdentity.translate(0, 0).scale(1)
-
+    // zoom without jumping
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
@@ -73,42 +73,77 @@ export default function NeuralGraph({
       })
 
     svg.call(zoom)
-    svg.call(zoom.transform, initialTransform)
 
-    // fully pre-run simulation — completely stopped before drawing
-    const simulation = d3
-      .forceSimulation(data.nodes as any)
-      .force(
-        "link",
-        d3
-          .forceLink(data.edges as any)
-          .id((d: any) => d.id)
-          .distance(50)
-          .strength(0.8)
-      )
-      .force("charge", d3.forceManyBody().strength(-100))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(10))
-      .stop()
+    // group nodes by topic
+    const topicGroups: Record<string, typeof data.nodes> = {}
+    data.nodes.forEach((node) => {
+      if (!topicGroups[node.topic]) topicGroups[node.topic] = []
+      topicGroups[node.topic].push(node)
+    })
 
-    // run until stable
-    for (let i = 0; i < 500; i++) simulation.tick()
+    const topics = Object.keys(topicGroups)
+    const numTopics = topics.length
 
-    // draw edges — completely static, no tick updates
-    container
+    // place topic clusters in a circle around center
+    const outerRadius = Math.min(width, height) * 0.38
+    const nodePositions: Record<string, { x: number; y: number }> = {}
+
+    topics.forEach((topic, topicIndex) => {
+      const angle = (topicIndex / numTopics) * 2 * Math.PI - Math.PI / 2
+      const clusterCx = cx + outerRadius * Math.cos(angle)
+      const clusterCy = cy + outerRadius * Math.sin(angle)
+
+      const nodes = topicGroups[topic]
+      const innerRadius = Math.min(60, nodes.length * 4)
+
+      nodes.forEach((node, nodeIndex) => {
+        const nodeAngle = (nodeIndex / nodes.length) * 2 * Math.PI
+        const r = nodes.length === 1 ? 0 : innerRadius * (0.4 + Math.random() * 0.6)
+        nodePositions[node.id] = {
+          x: clusterCx + r * Math.cos(nodeAngle),
+          y: clusterCy + r * Math.sin(nodeAngle),
+        }
+      })
+    })
+
+    // assign positions to nodes
+    data.nodes.forEach((node) => {
+      const pos = nodePositions[node.id]
+      if (pos) {
+        ;(node as any).x = pos.x
+        ;(node as any).y = pos.y
+      }
+    })
+
+    // build edge lookup for hover highlighting
+    const connectedIds: Record<string, Set<string>> = {}
+    data.edges.forEach((edge: any) => {
+      const s = edge.source?.id || edge.source
+      const t = edge.target?.id || edge.target
+      if (!connectedIds[s]) connectedIds[s] = new Set()
+      if (!connectedIds[t]) connectedIds[t] = new Set()
+      connectedIds[s].add(t)
+      connectedIds[t].add(s)
+    })
+
+    // draw edges
+    const link = container
       .append("g")
       .selectAll("line")
       .data(data.edges)
       .join("line")
-      .attr("stroke", (d: any) => TOPIC_COLORS[d.source.topic] || "#ffffff")
-      .attr("stroke-opacity", 0.12)
+      .attr("stroke", (d: any) => {
+        const sourceNode = data.nodes.find((n) => n.id === (d.source?.id || d.source))
+        return TOPIC_COLORS[sourceNode?.topic || "Other"] || "#ffffff"
+      })
+      .attr("stroke-opacity", 0.08)
       .attr("stroke-width", 0.4)
-      .attr("x1", (d: any) => d.source.x)
-      .attr("y1", (d: any) => d.source.y)
-      .attr("x2", (d: any) => d.target.x)
-      .attr("y2", (d: any) => d.target.y)
+      .attr("x1", (d: any) => nodePositions[d.source?.id || d.source]?.x || 0)
+      .attr("y1", (d: any) => nodePositions[d.source?.id || d.source]?.y || 0)
+      .attr("x2", (d: any) => nodePositions[d.target?.id || d.target]?.x || 0)
+      .attr("y2", (d: any) => nodePositions[d.target?.id || d.target]?.y || 0)
 
-    // draw nodes — completely static
+    // draw nodes
     const node = container
       .append("g")
       .selectAll("circle")
@@ -116,10 +151,10 @@ export default function NeuralGraph({
       .join("circle")
       .attr("r", (d) => Math.max(3, Math.min(10, d.messageCount / 2)))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("fill-opacity", 0.8)
+      .attr("fill-opacity", 0.85)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("stroke-width", 0.8)
-      .attr("stroke-opacity", 0.4)
+      .attr("stroke-opacity", 0.5)
       .attr("cursor", "pointer")
       .attr("cx", (d: any) => d.x)
       .attr("cy", (d: any) => d.y)
@@ -128,13 +163,28 @@ export default function NeuralGraph({
         onNodeClick(d.id)
       })
       .on("mouseover", function (event, d) {
+        // highlight this node
         d3.select(this)
-          .transition()
-          .duration(150)
+          .transition().duration(120)
           .attr("fill-opacity", 1)
           .attr("stroke-opacity", 1)
-          .attr("stroke-width", 2)
+          .attr("stroke-width", 2.5)
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
+
+        // highlight connected edges
+        link
+          .transition().duration(120)
+          .attr("stroke-opacity", (l: any) => {
+            const s = l.source?.id || l.source
+            const t = l.target?.id || l.target
+            return s === d.id || t === d.id ? 0.9 : 0.04
+          })
+          .attr("stroke-width", (l: any) => {
+            const s = l.source?.id || l.source
+            const t = l.target?.id || l.target
+            return s === d.id || t === d.id ? 1.5 : 0.4
+          })
+
         onNodeHover(d, event.pageX, event.pageY)
       })
       .on("mousemove", function (event) {
@@ -146,18 +196,20 @@ export default function NeuralGraph({
       })
       .on("mouseout", function (_, d) {
         d3.select(this)
-          .transition()
-          .duration(150)
-          .attr("fill-opacity", 0.8)
-          .attr("stroke-opacity", 0.4)
+          .transition().duration(120)
+          .attr("fill-opacity", 0.85)
+          .attr("stroke-opacity", 0.5)
           .attr("stroke-width", 0.8)
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
+
+        link
+          .transition().duration(120)
+          .attr("stroke-opacity", 0.08)
+          .attr("stroke-width", 0.4)
+
         onNodeHover(null, 0, 0)
       })
 
-    return () => {
-      simulation.stop()
-    }
   }, [data, onNodeClick, onNodeHover])
 
   return (
