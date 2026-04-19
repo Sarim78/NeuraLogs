@@ -59,35 +59,23 @@ export default function NeuralGraph({
       .attr("width", width)
       .attr("height", height)
 
-    // glow filter
-    const defs = svg.append("defs")
-
-    const filter = defs.append("filter")
-      .attr("id", "glow")
-      .attr("x", "-50%")
-      .attr("y", "-50%")
-      .attr("width", "200%")
-      .attr("height", "200%")
-
-    filter.append("feGaussianBlur")
-      .attr("stdDeviation", "3")
-      .attr("result", "coloredBlur")
-
-    const feMerge = filter.append("feMerge")
-    feMerge.append("feMergeNode").attr("in", "coloredBlur")
-    feMerge.append("feMergeNode").attr("in", "SourceGraphic")
-
     const container = svg.append("g")
 
+    // stable zoom that doesnt jump
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.01, 50])
+      .scaleExtent([0.05, 20])
+      .filter((event) => {
+        // ignore double click zoom, only scroll and drag
+        return event.type !== "dblclick"
+      })
       .on("zoom", (event) => {
         container.attr("transform", event.transform)
       })
 
     svg.call(zoom)
 
+    // run simulation fully before drawing so nothing animates on load
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -95,61 +83,46 @@ export default function NeuralGraph({
         d3
           .forceLink(data.edges as any)
           .id((d: any) => d.id)
-          .distance(120)
+          .distance(100)
+          .strength(0.3)
       )
-      .force("charge", d3.forceManyBody().strength(-200))
+      .force("charge", d3.forceManyBody().strength(-150))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius((d: any) => Math.max(8, Math.min(20, d.messageCount / 2)) + 6))
-      .force("x", d3.forceX(width / 2).strength(0.02))
-      .force("y", d3.forceY(height / 2).strength(0.02))
-      .alphaDecay(0.02)
+      .force("collision", d3.forceCollide().radius((d: any) => Math.max(5, Math.min(16, d.messageCount / 2)) + 5))
+      .alphaDecay(0.03)
       .stop()
 
-    // pre-run for stability
-    for (let i = 0; i < 200; i++) simulation.tick()
+    // pre run 300 ticks so graph starts stable
+    for (let i = 0; i < 300; i++) simulation.tick()
 
-    // draw edges with glow
+    // draw edges first so they sit behind nodes
     const link = container
       .append("g")
+      .attr("class", "links")
       .selectAll("line")
       .data(data.edges)
       .join("line")
       .attr("stroke", (d: any) => TOPIC_COLORS[d.source.topic] || "#ffffff")
-      .attr("stroke-opacity", 0.15)
-      .attr("stroke-width", 0.6)
+      .attr("stroke-opacity", 0.12)
+      .attr("stroke-width", 0.5)
       .attr("x1", (d: any) => d.source.x)
       .attr("y1", (d: any) => d.source.y)
       .attr("x2", (d: any) => d.target.x)
       .attr("y2", (d: any) => d.target.y)
 
-    // outer glow ring
-    container
-      .append("g")
-      .selectAll("circle.glow")
-      .data(data.nodes)
-      .join("circle")
-      .attr("class", "glow")
-      .attr("r", (d) => Math.max(8, Math.min(20, d.messageCount / 2)) + 4)
-      .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("fill-opacity", 0.08)
-      .attr("filter", "url(#glow)")
-      .attr("cx", (d: any) => d.x)
-      .attr("cy", (d: any) => d.y)
-
-    // main nodes
+    // draw nodes
     const node = container
       .append("g")
-      .selectAll("circle.node")
+      .attr("class", "nodes")
+      .selectAll("circle")
       .data(data.nodes)
       .join("circle")
-      .attr("class", "node")
-      .attr("r", (d) => Math.max(3, Math.min(14, d.messageCount / 2)))
+      .attr("r", (d) => Math.max(3, Math.min(12, d.messageCount / 2)))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("fill-opacity", 0.9)
+      .attr("fill-opacity", 0.85)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("stroke-width", 0.8)
-      .attr("stroke-opacity", 0.6)
-      .attr("filter", "url(#glow)")
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 0.5)
       .attr("cursor", "pointer")
       .attr("cx", (d: any) => d.x)
       .attr("cy", (d: any) => d.y)
@@ -160,8 +133,7 @@ export default function NeuralGraph({
       .on("mouseover", function (event, d) {
         d3.select(this)
           .attr("fill-opacity", 1)
-          .attr("r", Math.max(3, Math.min(14, d.messageCount / 2)) + 4)
-          .attr("stroke-width", 2)
+          .attr("r", Math.max(3, Math.min(12, d.messageCount / 2)) + 3)
         onNodeHover(d, event.pageX, event.pageY)
       })
       .on("mousemove", function (event) {
@@ -173,16 +145,15 @@ export default function NeuralGraph({
       })
       .on("mouseout", function (_, d) {
         d3.select(this)
-          .attr("fill-opacity", 0.9)
-          .attr("r", Math.max(3, Math.min(14, d.messageCount / 2)))
-          .attr("stroke-width", 0.8)
+          .attr("fill-opacity", 0.85)
+          .attr("r", Math.max(3, Math.min(12, d.messageCount / 2)))
         onNodeHover(null, 0, 0)
       })
       .call(
         d3
           .drag<SVGCircleElement, GraphNode>()
           .on("start", (event, d: any) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart()
+            if (!event.active) simulation.alphaTarget(0.1).restart()
             d.fx = d.x
             d.fy = d.y
           })
@@ -203,19 +174,14 @@ export default function NeuralGraph({
         .attr("y1", (d: any) => d.source.y)
         .attr("x2", (d: any) => d.target.x)
         .attr("y2", (d: any) => d.target.y)
-
-      node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y)
-
-      container.selectAll("circle.glow")
+      node
         .attr("cx", (d: any) => d.x)
         .attr("cy", (d: any) => d.y)
     })
 
     simulation.restart()
 
-    return () => {
-      simulation.stop()
-    }
+    return () => simulation.stop()
   }, [data, onNodeClick, onNodeHover])
 
   return (

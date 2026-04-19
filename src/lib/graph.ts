@@ -15,16 +15,15 @@ export function buildGraph(conversations: Conversation[]): GraphData {
   })
 
   const topicMap: Record<string, string[]> = {}
-
   conversations.forEach((convo) => {
     const topic = convo.topic || "Other"
     if (!topicMap[topic]) topicMap[topic] = []
     topicMap[topic].push(convo.id)
   })
 
-  // limit each node to max 3 edges so clusters don't collapse into a ball
   const edgeCount: Record<string, number> = {}
 
+  // connect within same topic — max 3 edges each
   Object.values(topicMap).forEach((ids) => {
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
@@ -38,6 +37,21 @@ export function buildGraph(conversations: Conversation[]): GraphData {
       }
     }
   })
+
+  // connect across topics so everything is one brain
+  const topicKeys = Object.keys(topicMap)
+  for (let i = 0; i < topicKeys.length; i++) {
+    for (let j = i + 1; j < topicKeys.length; j++) {
+      const aIds = topicMap[topicKeys[i]]
+      const bIds = topicMap[topicKeys[j]]
+      if (aIds.length && bIds.length) {
+        edges.push({
+          source: aIds[0],
+          target: bIds[0],
+        })
+      }
+    }
+  }
 
   return { nodes, edges }
 }
