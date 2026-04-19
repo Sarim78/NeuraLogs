@@ -61,12 +61,10 @@ export default function NeuralGraph({
 
     const container = svg.append("g")
 
-    // stable zoom that doesnt jump
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
       .filter((event) => {
-        // ignore double click zoom, only scroll and drag
         return event.type !== "dblclick"
       })
       .on("zoom", (event) => {
@@ -75,7 +73,6 @@ export default function NeuralGraph({
 
     svg.call(zoom)
 
-    // run simulation fully before drawing so nothing animates on load
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -92,10 +89,8 @@ export default function NeuralGraph({
       .alphaDecay(0.03)
       .stop()
 
-    // pre run 300 ticks so graph starts stable
     for (let i = 0; i < 300; i++) simulation.tick()
 
-    // draw edges first so they sit behind nodes
     const link = container
       .append("g")
       .attr("class", "links")
@@ -110,7 +105,6 @@ export default function NeuralGraph({
       .attr("x2", (d: any) => d.target.x)
       .attr("y2", (d: any) => d.target.y)
 
-    // draw nodes
     const node = container
       .append("g")
       .attr("class", "nodes")
@@ -181,7 +175,9 @@ export default function NeuralGraph({
 
     simulation.restart()
 
-    return () => simulation.stop()
+    return () => {
+      simulation.stop()
+    }
   }, [data, onNodeClick, onNodeHover])
 
   return (
