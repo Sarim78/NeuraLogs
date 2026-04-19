@@ -64,15 +64,14 @@ export default function NeuralGraph({
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
-      .filter((event) => {
-        return event.type !== "dblclick"
-      })
+      .filter((event) => event.type !== "dblclick")
       .on("zoom", (event) => {
         container.attr("transform", event.transform)
       })
 
     svg.call(zoom)
 
+    // run fully before rendering — no load animation
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -80,46 +79,51 @@ export default function NeuralGraph({
         d3
           .forceLink(data.edges as any)
           .id((d: any) => d.id)
-          .distance(100)
-          .strength(0.3)
+          .distance(60)
+          .strength(0.5)
       )
-      .force("charge", d3.forceManyBody().strength(-150))
+      .force("charge", d3.forceManyBody().strength(-120))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius((d: any) => Math.max(5, Math.min(16, d.messageCount / 2)) + 5))
-      .alphaDecay(0.03)
+      .force("collision", d3.forceCollide().radius((d: any) => Math.max(4, Math.min(14, d.messageCount / 2)) + 3))
+      .force("x", d3.forceX(width / 2).strength(0.02))
+      .force("y", d3.forceY(height / 2).strength(0.02))
+      .alphaDecay(0.02)
       .stop()
 
-    for (let i = 0; i < 300; i++) simulation.tick()
+    // pre-run 500 ticks for stability
+    for (let i = 0; i < 500; i++) simulation.tick()
 
+    // edges
     const link = container
       .append("g")
-      .attr("class", "links")
       .selectAll("line")
       .data(data.edges)
       .join("line")
       .attr("stroke", (d: any) => TOPIC_COLORS[d.source.topic] || "#ffffff")
-      .attr("stroke-opacity", 0.12)
-      .attr("stroke-width", 0.5)
+      .attr("stroke-opacity", 0.1)
+      .attr("stroke-width", 0.4)
       .attr("x1", (d: any) => d.source.x)
       .attr("y1", (d: any) => d.source.y)
       .attr("x2", (d: any) => d.target.x)
       .attr("y2", (d: any) => d.target.y)
 
+    // nodes — no animation on load, only on hover
     const node = container
       .append("g")
-      .attr("class", "nodes")
       .selectAll("circle")
       .data(data.nodes)
       .join("circle")
-      .attr("r", (d) => Math.max(3, Math.min(12, d.messageCount / 2)))
+      .attr("r", (d) => Math.max(3, Math.min(10, d.messageCount / 2)))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("fill-opacity", 0.85)
+      .attr("fill-opacity", 0.8)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
-      .attr("stroke-width", 1)
-      .attr("stroke-opacity", 0.5)
+      .attr("stroke-width", 0.8)
+      .attr("stroke-opacity", 0.4)
       .attr("cursor", "pointer")
       .attr("cx", (d: any) => d.x)
       .attr("cy", (d: any) => d.y)
+      // CSS transition for smooth hover only
+      .style("transition", "r 0.15s ease, fill-opacity 0.15s ease")
       .on("click", (event, d) => {
         event.stopPropagation()
         onNodeClick(d.id)
@@ -127,7 +131,17 @@ export default function NeuralGraph({
       .on("mouseover", function (event, d) {
         d3.select(this)
           .attr("fill-opacity", 1)
-          .attr("r", Math.max(3, Math.min(12, d.messageCount / 2)) + 3)
+          .attr("stroke-opacity", 1)
+          .attr("stroke-width", 2)
+          .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
+        // highlight connected edges
+        link
+          .attr("stroke-opacity", (l: any) =>
+            l.source.id === d.id || l.target.id === d.id ? 0.8 : 0.05
+          )
+          .attr("stroke-width", (l: any) =>
+            l.source.id === d.id || l.target.id === d.id ? 1.5 : 0.4
+          )
         onNodeHover(d, event.pageX, event.pageY)
       })
       .on("mousemove", function (event) {
@@ -139,8 +153,14 @@ export default function NeuralGraph({
       })
       .on("mouseout", function (_, d) {
         d3.select(this)
-          .attr("fill-opacity", 0.85)
-          .attr("r", Math.max(3, Math.min(12, d.messageCount / 2)))
+          .attr("fill-opacity", 0.8)
+          .attr("stroke-opacity", 0.4)
+          .attr("stroke-width", 0.8)
+          .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
+        // reset edges
+        link
+          .attr("stroke-opacity", 0.1)
+          .attr("stroke-width", 0.4)
         onNodeHover(null, 0, 0)
       })
       .call(

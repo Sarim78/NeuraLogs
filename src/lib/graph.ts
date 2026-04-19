@@ -23,14 +23,14 @@ export function buildGraph(conversations: Conversation[]): GraphData {
 
   const edgeCount: Record<string, number> = {}
 
-  // connect within same topic — max 3 edges each
+  // connect within same topic max 4 edges
   Object.values(topicMap).forEach((ids) => {
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
         const a = ids[i]
         const b = ids[j]
-        if ((edgeCount[a] || 0) >= 3) continue
-        if ((edgeCount[b] || 0) >= 3) continue
+        if ((edgeCount[a] || 0) >= 4) continue
+        if ((edgeCount[b] || 0) >= 4) continue
         edges.push({ source: a, target: b })
         edgeCount[a] = (edgeCount[a] || 0) + 1
         edgeCount[b] = (edgeCount[b] || 0) + 1
@@ -38,17 +38,17 @@ export function buildGraph(conversations: Conversation[]): GraphData {
     }
   })
 
-  // connect across topics so everything is one brain
+  // connect every topic to every other topic with 2 bridge edges
   const topicKeys = Object.keys(topicMap)
   for (let i = 0; i < topicKeys.length; i++) {
     for (let j = i + 1; j < topicKeys.length; j++) {
       const aIds = topicMap[topicKeys[i]]
       const bIds = topicMap[topicKeys[j]]
       if (aIds.length && bIds.length) {
-        edges.push({
-          source: aIds[0],
-          target: bIds[0],
-        })
+        edges.push({ source: aIds[0], target: bIds[0] })
+        if (aIds.length > 1 && bIds.length > 1) {
+          edges.push({ source: aIds[1], target: bIds[1] })
+        }
       }
     }
   }

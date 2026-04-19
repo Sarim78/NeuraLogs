@@ -27,17 +27,53 @@ const TOPIC_COLORS: Record<string, string> = {
   "Other": "#6b7280",
 }
 
+// group into broad categories for display
+const GROUPS: Record<string, string[]> = {
+  "Tech": ["Cybersecurity", "AI & ML", "Web Dev", "Backend", "Cloud & DevOps", "Programming", "Data & Analytics"],
+  "Health": ["Fitness", "Mental Health", "Medical"],
+  "Finance": ["Investing", "Personal Finance", "Business"],
+  "Career": ["Job Search", "Career Growth"],
+  "Creative": ["Writing", "Design", "Music"],
+  "Learning": ["Math", "School", "Research"],
+  "Personal": ["Relationships", "Self Improvement", "Travel", "Food"],
+  "Other": ["Other"],
+}
+
+const GROUP_COLORS: Record<string, string> = {
+  "Tech": "#6366f1",
+  "Health": "#22c55e",
+  "Finance": "#f59e0b",
+  "Career": "#3b82f6",
+  "Creative": "#e879f9",
+  "Learning": "#34d399",
+  "Personal": "#fb7185",
+  "Other": "#6b7280",
+}
+
 export default function TopicLegend() {
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-2 bg-black/60 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm">
+    <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-1.5 bg-black/60 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm max-h-[80vh] overflow-y-auto">
       <p className="text-white/40 text-xs font-medium mb-1">Topics</p>
-      {Object.entries(TOPIC_COLORS).map(([topic, color]) => (
-        <div key={topic} className="flex items-center gap-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-white/60 text-xs">{topic}</span>
+      {Object.entries(GROUPS).map(([group, subtopics]) => (
+        <div key={group} className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: GROUP_COLORS[group] }}
+            />
+            <span className="text-white/80 text-xs font-medium">{group}</span>
+          </div>
+          <div className="flex flex-col gap-0.5 pl-4">
+            {subtopics.map((sub) => (
+              <div key={sub} className="flex items-center gap-1.5">
+                <div
+                  className="w-1.5 h-1.5 rounded-full opacity-70"
+                  style={{ backgroundColor: TOPIC_COLORS[sub] }}
+                />
+                <span className="text-white/40 text-xs">{sub}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
