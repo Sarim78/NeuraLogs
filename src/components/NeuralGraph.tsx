@@ -61,6 +61,9 @@ export default function NeuralGraph({
 
     const container = svg.append("g")
 
+    // set initial transform so zoom starts centered
+    const initialTransform = d3.zoomIdentity.translate(0, 0).scale(1)
+
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
@@ -70,8 +73,9 @@ export default function NeuralGraph({
       })
 
     svg.call(zoom)
+    svg.call(zoom.transform, initialTransform)
 
-    // run fully before rendering — no load animation
+    // fully pre-run simulation — completely stopped before drawing
     const simulation = d3
       .forceSimulation(data.nodes as any)
       .force(
@@ -79,35 +83,32 @@ export default function NeuralGraph({
         d3
           .forceLink(data.edges as any)
           .id((d: any) => d.id)
-          .distance(60)
-          .strength(0.5)
+          .distance(50)
+          .strength(0.8)
       )
-      .force("charge", d3.forceManyBody().strength(-120))
+      .force("charge", d3.forceManyBody().strength(-100))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius((d: any) => Math.max(4, Math.min(14, d.messageCount / 2)) + 3))
-      .force("x", d3.forceX(width / 2).strength(0.02))
-      .force("y", d3.forceY(height / 2).strength(0.02))
-      .alphaDecay(0.02)
+      .force("collision", d3.forceCollide().radius(10))
       .stop()
 
-    // pre-run 500 ticks for stability
+    // run until stable
     for (let i = 0; i < 500; i++) simulation.tick()
 
-    // edges
-    const link = container
+    // draw edges — completely static, no tick updates
+    container
       .append("g")
       .selectAll("line")
       .data(data.edges)
       .join("line")
       .attr("stroke", (d: any) => TOPIC_COLORS[d.source.topic] || "#ffffff")
-      .attr("stroke-opacity", 0.1)
+      .attr("stroke-opacity", 0.12)
       .attr("stroke-width", 0.4)
       .attr("x1", (d: any) => d.source.x)
       .attr("y1", (d: any) => d.source.y)
       .attr("x2", (d: any) => d.target.x)
       .attr("y2", (d: any) => d.target.y)
 
-    // nodes — no animation on load, only on hover
+    // draw nodes — completely static
     const node = container
       .append("g")
       .selectAll("circle")
@@ -122,26 +123,18 @@ export default function NeuralGraph({
       .attr("cursor", "pointer")
       .attr("cx", (d: any) => d.x)
       .attr("cy", (d: any) => d.y)
-      // CSS transition for smooth hover only
-      .style("transition", "r 0.15s ease, fill-opacity 0.15s ease")
       .on("click", (event, d) => {
         event.stopPropagation()
         onNodeClick(d.id)
       })
       .on("mouseover", function (event, d) {
         d3.select(this)
+          .transition()
+          .duration(150)
           .attr("fill-opacity", 1)
           .attr("stroke-opacity", 1)
           .attr("stroke-width", 2)
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
-        // highlight connected edges
-        link
-          .attr("stroke-opacity", (l: any) =>
-            l.source.id === d.id || l.target.id === d.id ? 0.8 : 0.05
-          )
-          .attr("stroke-width", (l: any) =>
-            l.source.id === d.id || l.target.id === d.id ? 1.5 : 0.4
-          )
         onNodeHover(d, event.pageX, event.pageY)
       })
       .on("mousemove", function (event) {
@@ -153,47 +146,14 @@ export default function NeuralGraph({
       })
       .on("mouseout", function (_, d) {
         d3.select(this)
+          .transition()
+          .duration(150)
           .attr("fill-opacity", 0.8)
           .attr("stroke-opacity", 0.4)
           .attr("stroke-width", 0.8)
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
-        // reset edges
-        link
-          .attr("stroke-opacity", 0.1)
-          .attr("stroke-width", 0.4)
         onNodeHover(null, 0, 0)
       })
-      .call(
-        d3
-          .drag<SVGCircleElement, GraphNode>()
-          .on("start", (event, d: any) => {
-            if (!event.active) simulation.alphaTarget(0.1).restart()
-            d.fx = d.x
-            d.fy = d.y
-          })
-          .on("drag", (event, d: any) => {
-            d.fx = event.x
-            d.fy = event.y
-          })
-          .on("end", (event, d: any) => {
-            if (!event.active) simulation.alphaTarget(0)
-            d.fx = null
-            d.fy = null
-          })
-      )
-
-    simulation.on("tick", () => {
-      link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y)
-      node
-        .attr("cx", (d: any) => d.x)
-        .attr("cy", (d: any) => d.y)
-    })
-
-    simulation.restart()
 
     return () => {
       simulation.stop()
