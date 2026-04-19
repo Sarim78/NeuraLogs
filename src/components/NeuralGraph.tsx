@@ -45,6 +45,7 @@ export default function NeuralGraph({
   onNodeHover,
 }: NeuralGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const zoomRef = useRef<d3.ZoomTransform>(d3.zoomIdentity)
 
   useEffect(() => {
     if (!svgRef.current || !data.nodes.length) return
@@ -63,19 +64,20 @@ export default function NeuralGraph({
 
     const container = svg.append("g")
 
-    // fix zoom so it never jumps — key is calling zoom.transform BEFORE binding zoom
+    container.attr("transform", zoomRef.current.toString())
+
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
       .filter((event) => event.type !== "dblclick")
       .on("zoom", (event) => {
+        zoomRef.current = event.transform
         container.attr("transform", event.transform)
       })
 
-    // bind zoom to svg
     svg.call(zoom)
+    svg.call(zoom.transform, zoomRef.current)
 
-    // group nodes by topic
     const topicGroups: Record<string, typeof data.nodes> = {}
     data.nodes.forEach((node) => {
       if (!topicGroups[node.topic]) topicGroups[node.topic] = []
@@ -87,7 +89,6 @@ export default function NeuralGraph({
     const outerRadius = Math.min(width, height) * 0.38
     const nodePositions: Record<string, { x: number; y: number }> = {}
 
-    // place clusters in circle — fully deterministic, no Math.random
     topics.forEach((topic, topicIndex) => {
       const angle = (topicIndex / numTopics) * 2 * Math.PI - Math.PI / 2
       const clusterCx = cx + outerRadius * Math.cos(angle)
@@ -105,7 +106,6 @@ export default function NeuralGraph({
       })
     })
 
-    // draw edges first
     const link = container
       .append("g")
       .selectAll("line")
@@ -135,7 +135,6 @@ export default function NeuralGraph({
         return nodePositions[id]?.y || cy
       })
 
-    // draw nodes on top
     const node = container
       .append("g")
       .selectAll("circle")
@@ -163,7 +162,6 @@ export default function NeuralGraph({
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
 
         link
-          .transition().duration(120)
           .attr("stroke-opacity", (l: any) => {
             const s = typeof l.source === "string" ? l.source : l.source?.id
             const t = typeof l.target === "string" ? l.target : l.target?.id
@@ -193,7 +191,6 @@ export default function NeuralGraph({
           .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
 
         link
-          .transition().duration(120)
           .attr("stroke-opacity", 0.08)
           .attr("stroke-width", 0.4)
 

@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+
 const TOPIC_COLORS: Record<string, string> = {
   "Cybersecurity": "#ef4444",
   "AI & ML": "#8b5cf6",
@@ -27,7 +31,6 @@ const TOPIC_COLORS: Record<string, string> = {
   "Other": "#6b7280",
 }
 
-// group into broad categories for display
 const GROUPS: Record<string, string[]> = {
   "Tech": ["Cybersecurity", "AI & ML", "Web Dev", "Backend", "Cloud & DevOps", "Programming", "Data & Analytics"],
   "Health": ["Fitness", "Mental Health", "Medical"],
@@ -51,31 +54,71 @@ const GROUP_COLORS: Record<string, string> = {
 }
 
 export default function TopicLegend() {
+  const [open, setOpen] = useState(false)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+
   return (
-    <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-1.5 bg-black/60 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm max-h-[80vh] overflow-y-auto">
-      <p className="text-white/40 text-xs font-medium mb-1">Topics</p>
-      {Object.entries(GROUPS).map(([group, subtopics]) => (
-        <div key={group} className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: GROUP_COLORS[group] }}
-            />
-            <span className="text-white/80 text-xs font-medium">{group}</span>
-          </div>
-          <div className="flex flex-col gap-0.5 pl-4">
-            {subtopics.map((sub) => (
-              <div key={sub} className="flex items-center gap-1.5">
-                <div
-                  className="w-1.5 h-1.5 rounded-full opacity-70"
-                  style={{ backgroundColor: TOPIC_COLORS[sub] }}
-                />
-                <span className="text-white/40 text-xs">{sub}</span>
-              </div>
+    <div className="fixed bottom-6 left-6 z-50">
+      {/* collapsed button */}
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 bg-black/60 border border-white/10 rounded-xl px-3 py-2 backdrop-blur-sm hover:border-white/20 transition-colors"
+        >
+          <div className="flex gap-1">
+            {Object.values(GROUP_COLORS).slice(0, 5).map((color, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: color }}
+              />
             ))}
           </div>
+          <span className="text-white/40 text-xs">Topics</span>
+        </button>
+      ) : (
+        <div className="flex flex-col gap-1.5 bg-black/80 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm w-44">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-white/40 text-xs font-medium">Topics</p>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-white/20 hover:text-white/60 text-xs transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          {Object.entries(GROUPS).map(([group, subtopics]) => (
+            <div key={group}>
+              <button
+                onClick={() => setExpandedGroup(expandedGroup === group ? null : group)}
+                className="flex items-center gap-2 w-full hover:opacity-80 transition-opacity"
+              >
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: GROUP_COLORS[group] }}
+                />
+                <span className="text-white/70 text-xs font-medium">{group}</span>
+                <span className="text-white/20 text-xs ml-auto">
+                  {expandedGroup === group ? "−" : "+"}
+                </span>
+              </button>
+              {expandedGroup === group && (
+                <div className="flex flex-col gap-0.5 pl-4 mt-1">
+                  {subtopics.map((sub) => (
+                    <div key={sub} className="flex items-center gap-1.5">
+                      <div
+                        className="w-1.5 h-1.5 rounded-full opacity-70 flex-shrink-0"
+                        style={{ backgroundColor: TOPIC_COLORS[sub] }}
+                      />
+                      <span className="text-white/40 text-xs">{sub}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   )
 }
