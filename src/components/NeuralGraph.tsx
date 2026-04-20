@@ -81,6 +81,8 @@ export default function NeuralGraph({
     svg.call(zoom)
     svg.call(zoom.transform, zoomRef.current)
 
+    // spread nodes across full canvas using topic-based seeding
+    // deterministic — no Math.random so zoom never jumps
     const topicGroups: Record<string, typeof data.nodes> = {}
     data.nodes.forEach((node) => {
       if (!topicGroups[node.topic]) topicGroups[node.topic] = []
@@ -89,26 +91,37 @@ export default function NeuralGraph({
 
     const topics = Object.keys(topicGroups)
     const numTopics = topics.length
-    const outerRadius = Math.min(width, height) * (isMobile ? 0.32 : 0.38)
     const nodePositions: Record<string, { x: number; y: number }> = {}
 
+    // use golden ratio to spread topic centers naturally across the canvas
+    const goldenRatio = 1.61803398875
+    const canvasPadding = 80
+
     topics.forEach((topic, topicIndex) => {
-      const angle = (topicIndex / numTopics) * 2 * Math.PI - Math.PI / 2
-      const clusterCx = cx + outerRadius * Math.cos(angle)
-      const clusterCy = cy + outerRadius * Math.sin(angle)
+      // golden angle distribution for organic spread
+      const angle = topicIndex * goldenRatio * 2 * Math.PI
+      const radiusFraction = Math.sqrt((topicIndex + 0.5) / numTopics)
+      const spreadRadius = (Math.min(width, height) / 2 - canvasPadding) * 0.9
+
+      const clusterCx = cx + spreadRadius * radiusFraction * Math.cos(angle)
+      const clusterCy = cy + spreadRadius * radiusFraction * Math.sin(angle)
+
       const nodes = topicGroups[topic]
-      const innerRadius = Math.min(isMobile ? 35 : 55, nodes.length * 3.5)
+      // cluster radius proportional to number of nodes
+      const innerRadius = Math.min(80, Math.sqrt(nodes.length) * 12)
 
       nodes.forEach((node, nodeIndex) => {
-        const nodeAngle = (nodeIndex / Math.max(nodes.length, 1)) * 2 * Math.PI
-        const r = nodes.length === 1 ? 0 : innerRadius * (0.3 + (nodeIndex % 3) * 0.25)
+        // spiral layout within each cluster
+        const spiralAngle = nodeIndex * goldenRatio * 2 * Math.PI
+        const spiralR = nodeIndex === 0 ? 0 : Math.sqrt(nodeIndex / nodes.length) * innerRadius
         nodePositions[node.id] = {
-          x: clusterCx + r * Math.cos(nodeAngle),
-          y: clusterCy + r * Math.sin(nodeAngle),
+          x: clusterCx + spiralR * Math.cos(spiralAngle),
+          y: clusterCy + spiralR * Math.sin(spiralAngle),
         }
       })
     })
 
+    // draw edges
     const link = container
       .append("g")
       .selectAll("line")
@@ -119,7 +132,7 @@ export default function NeuralGraph({
         const sourceNode = data.nodes.find((n) => n.id === sourceId)
         return TOPIC_COLORS[sourceNode?.topic || "Other"] || "#ffffff"
       })
-      .attr("stroke-opacity", 0.08)
+      .attr("stroke-opacity", 0.07)
       .attr("stroke-width", 0.4)
       .attr("x1", (d: any) => {
         const id = typeof d.source === "string" ? d.source : d.source?.id
@@ -138,6 +151,7 @@ export default function NeuralGraph({
         return nodePositions[id]?.y || cy
       })
 
+    // draw nodes
     const node = container
       .append("g")
       .selectAll("circle")
@@ -197,7 +211,7 @@ export default function NeuralGraph({
             .attr("r", Math.max(2, Math.min(6, Math.sqrt(d.messageCount))))
 
           link
-            .attr("stroke-opacity", 0.08)
+            .attr("stroke-opacity", 0.07)
             .attr("stroke-width", 0.4)
 
           onNodeHover(null, 0, 0)

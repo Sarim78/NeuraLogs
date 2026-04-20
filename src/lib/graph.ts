@@ -31,23 +31,26 @@ export function buildGraph(conversations: Conversation[]): GraphData {
     }
   }
 
-  // connect within same topic in a ring so it looks like a cluster
+  // connect within same topic in a ring
   Object.values(topicMap).forEach((ids) => {
     for (let i = 0; i < ids.length; i++) {
       addEdge(ids[i], ids[(i + 1) % ids.length])
       if (ids.length > 4) {
         addEdge(ids[i], ids[(i + 2) % ids.length])
       }
+      if (ids.length > 8) {
+        addEdge(ids[i], ids[(i + 3) % ids.length])
+      }
     }
   })
 
-  // connect every topic to every other topic with bridge edges
+  // connect every topic to every other with bridge edges
   const topicKeys = Object.keys(topicMap)
   for (let i = 0; i < topicKeys.length; i++) {
     for (let j = i + 1; j < topicKeys.length; j++) {
       const aIds = topicMap[topicKeys[i]]
       const bIds = topicMap[topicKeys[j]]
-      const bridges = Math.min(3, aIds.length, bIds.length)
+      const bridges = Math.min(4, aIds.length, bIds.length)
       for (let k = 0; k < bridges; k++) {
         addEdge(aIds[k % aIds.length], bIds[k % bIds.length])
       }
