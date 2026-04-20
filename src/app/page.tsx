@@ -41,12 +41,6 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
-
-      {/* demo banner */}
-      {isDemo && showBanner && (
-        <DemoBanner onDismiss={() => setShowBanner(false)} />
-      )}
-
       {/* top bar */}
       <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 h-12 border-b border-white/5 backdrop-blur-sm">
         <p className="text-white font-bold text-xs">
