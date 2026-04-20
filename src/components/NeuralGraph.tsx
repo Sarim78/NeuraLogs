@@ -54,6 +54,7 @@ export default function NeuralGraph({
     const height = svgRef.current.clientHeight
     const cx = width / 2
     const cy = height / 2
+    const isMobile = width < 768
 
     d3.select(svgRef.current).selectAll("*").remove()
 
@@ -63,13 +64,16 @@ export default function NeuralGraph({
       .attr("height", height)
 
     const container = svg.append("g")
-
     container.attr("transform", zoomRef.current.toString())
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
-      .filter((event) => event.type !== "dblclick")
+      .filter((event) => {
+        // on mobile allow pinch zoom but not mouse drag conflicts
+        if (isMobile) return event.type === "touchstart" || event.type === "touchmove" || event.type === "wheel"
+        return event.type !== "dblclick"
+      })
       .on("zoom", (event) => {
         zoomRef.current = event.transform
         container.attr("transform", event.transform)
@@ -86,7 +90,7 @@ export default function NeuralGraph({
 
     const topics = Object.keys(topicGroups)
     const numTopics = topics.length
-    const outerRadius = Math.min(width, height) * 0.38
+    const outerRadius = Math.min(width, height) * (isMobile ? 0.32 : 0.38)
     const nodePositions: Record<string, { x: number; y: number }> = {}
 
     topics.forEach((topic, topicIndex) => {
@@ -94,7 +98,7 @@ export default function NeuralGraph({
       const clusterCx = cx + outerRadius * Math.cos(angle)
       const clusterCy = cy + outerRadius * Math.sin(angle)
       const nodes = topicGroups[topic]
-      const innerRadius = Math.min(55, nodes.length * 3.5)
+      const innerRadius = Math.min(isMobile ? 35 : 55, nodes.length * 3.5)
 
       nodes.forEach((node, nodeIndex) => {
         const nodeAngle = (nodeIndex / Math.max(nodes.length, 1)) * 2 * Math.PI
@@ -140,7 +144,7 @@ export default function NeuralGraph({
       .selectAll("circle")
       .data(data.nodes)
       .join("circle")
-      .attr("r", (d) => Math.max(3, Math.min(10, d.messageCount / 2)))
+      .attr("r", (d) => Math.max(isMobile ? 4 : 3, Math.min(isMobile ? 8 : 10, d.messageCount / 2)))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("fill-opacity", 0.85)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
@@ -153,49 +157,54 @@ export default function NeuralGraph({
         event.stopPropagation()
         onNodeClick(d.id)
       })
-      .on("mouseover", function (event, d) {
-        d3.select(this)
-          .transition().duration(120)
-          .attr("fill-opacity", 1)
-          .attr("stroke-opacity", 1)
-          .attr("stroke-width", 2.5)
-          .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
 
-        link
-          .attr("stroke-opacity", (l: any) => {
-            const s = typeof l.source === "string" ? l.source : l.source?.id
-            const t = typeof l.target === "string" ? l.target : l.target?.id
-            return s === d.id || t === d.id ? 0.9 : 0.03
-          })
-          .attr("stroke-width", (l: any) => {
-            const s = typeof l.source === "string" ? l.source : l.source?.id
-            const t = typeof l.target === "string" ? l.target : l.target?.id
-            return s === d.id || t === d.id ? 1.5 : 0.4
-          })
+    // only add hover effects on desktop
+    if (!isMobile) {
+      node
+        .on("mouseover", function (event, d) {
+          d3.select(this)
+            .transition().duration(120)
+            .attr("fill-opacity", 1)
+            .attr("stroke-opacity", 1)
+            .attr("stroke-width", 2.5)
+            .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
 
-        onNodeHover(d, event.pageX, event.pageY)
-      })
-      .on("mousemove", function (event) {
-        onNodeHover(
-          d3.select(this).datum() as GraphNode,
-          event.pageX,
-          event.pageY
-        )
-      })
-      .on("mouseout", function (_, d) {
-        d3.select(this)
-          .transition().duration(120)
-          .attr("fill-opacity", 0.85)
-          .attr("stroke-opacity", 0.5)
-          .attr("stroke-width", 0.8)
-          .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
+          link
+            .attr("stroke-opacity", (l: any) => {
+              const s = typeof l.source === "string" ? l.source : l.source?.id
+              const t = typeof l.target === "string" ? l.target : l.target?.id
+              return s === d.id || t === d.id ? 0.9 : 0.03
+            })
+            .attr("stroke-width", (l: any) => {
+              const s = typeof l.source === "string" ? l.source : l.source?.id
+              const t = typeof l.target === "string" ? l.target : l.target?.id
+              return s === d.id || t === d.id ? 1.5 : 0.4
+            })
 
-        link
-          .attr("stroke-opacity", 0.08)
-          .attr("stroke-width", 0.4)
+          onNodeHover(d, event.pageX, event.pageY)
+        })
+        .on("mousemove", function (event) {
+          onNodeHover(
+            d3.select(this).datum() as GraphNode,
+            event.pageX,
+            event.pageY
+          )
+        })
+        .on("mouseout", function (_, d) {
+          d3.select(this)
+            .transition().duration(120)
+            .attr("fill-opacity", 0.85)
+            .attr("stroke-opacity", 0.5)
+            .attr("stroke-width", 0.8)
+            .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
 
-        onNodeHover(null, 0, 0)
-      })
+          link
+            .attr("stroke-opacity", 0.08)
+            .attr("stroke-width", 0.4)
+
+          onNodeHover(null, 0, 0)
+        })
+    }
 
   }, [data, onNodeClick, onNodeHover])
 

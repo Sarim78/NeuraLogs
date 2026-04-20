@@ -58,8 +58,7 @@ export default function TopicLegend() {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
 
   return (
-    <div className="fixed bottom-6 left-6 z-50">
-      {/* collapsed button */}
+    <div className="fixed bottom-6 left-6 z-50 max-w-[160px]">
       {!open ? (
         <button
           onClick={() => setOpen(true)}

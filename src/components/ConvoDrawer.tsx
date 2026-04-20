@@ -14,7 +14,6 @@ export default function ConvoDrawer({
 }: ConvoDrawerProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // scroll to top when conversation changes
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
@@ -24,8 +23,8 @@ export default function ConvoDrawer({
   if (!conversation) return null
 
   return (
-    <div className="fixed right-0 top-0 h-full w-96 bg-black/95 border-l border-white/10 z-50 flex flex-col backdrop-blur-sm">
-      
+    <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-black/95 md:border-l border-white/10 z-50 flex flex-col backdrop-blur-sm">
+
       {/* header */}
       <div className="flex items-start justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
         <div className="flex flex-col gap-1 flex-1 mr-3">
@@ -64,7 +63,7 @@ export default function ConvoDrawer({
       {/* messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4 scrollbar-thin"
+        className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4"
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.1) transparent" }}
       >
         {conversation.messages.map((msg, i) => (
@@ -88,8 +87,6 @@ export default function ConvoDrawer({
             </div>
           </div>
         ))}
-
-        {/* bottom padding so last message isnt cut off */}
         <div className="h-4" />
       </div>
     </div>
