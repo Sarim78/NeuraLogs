@@ -41,27 +41,27 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
-      {/* top bar */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 h-12 border-b border-white/5 backdrop-blur-sm">
-        <p className="text-white font-bold text-xs">
-          All processing happens locally. No data is collected or transmitted.
-        </p>
-        <div className="text-center absolute left-1/2 -translate-x-1/2">
-          <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
-            Neuralogs
-          </h1>
-          <p className="text-white/30 text-xs">your mind, visualized</p>
-        </div>
-        {graphData && (
-          <button
-            onClick={reset}
-            className="text-white/40 hover:text-white text-xs transition-colors border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5"
-          >
-            Reset
-          </button>
-        )}
-        {!graphData && <div />}
+    {/* top bar */}
+    <div className="absolute top-0 left-0 right-0 z-40 flex flex-col md:flex-row md:items-center md:justify-between px-4 md:px-6 py-2 md:h-12 border-b border-white/5 backdrop-blur-sm gap-0.5">
+      <div className="text-center md:text-left md:absolute md:left-1/2 md:-translate-x-1/2">
+        <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
+          Neuralogs
+        </h1>
+        <p className="text-white/30 text-xs">your mind, visualized</p>
       </div>
+      <p className="text-white/40 font-bold text-xs text-center md:text-left order-last md:order-first">
+        All processing happens locally. No data is collected or transmitted.
+      </p>
+      {graphData && (
+        <button
+          onClick={reset}
+          className="text-white/40 hover:text-white text-xs transition-colors border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 self-end md:self-auto"
+        >
+          Reset
+        </button>
+      )}
+      {!graphData && <div className="hidden md:block" />}
+    </div>
 
       {/* upload or loading screen */}
       {!graphData ? (
