@@ -70,7 +70,6 @@ export default function NeuralGraph({
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.05, 20])
       .filter((event) => {
-        // on mobile allow pinch zoom but not mouse drag conflicts
         if (isMobile) return event.type === "touchstart" || event.type === "touchmove" || event.type === "wheel"
         return event.type !== "dblclick"
       })
@@ -144,7 +143,7 @@ export default function NeuralGraph({
       .selectAll("circle")
       .data(data.nodes)
       .join("circle")
-      .attr("r", (d) => Math.max(isMobile ? 4 : 3, Math.min(isMobile ? 8 : 10, d.messageCount / 2)))
+      .attr("r", (d) => Math.max(2, Math.min(6, Math.sqrt(d.messageCount))))
       .attr("fill", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
       .attr("fill-opacity", 0.85)
       .attr("stroke", (d) => TOPIC_COLORS[d.topic] || TOPIC_COLORS.Other)
@@ -158,7 +157,6 @@ export default function NeuralGraph({
         onNodeClick(d.id)
       })
 
-    // only add hover effects on desktop
     if (!isMobile) {
       node
         .on("mouseover", function (event, d) {
@@ -167,7 +165,7 @@ export default function NeuralGraph({
             .attr("fill-opacity", 1)
             .attr("stroke-opacity", 1)
             .attr("stroke-width", 2.5)
-            .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)) + 5)
+            .attr("r", Math.max(2, Math.min(6, Math.sqrt(d.messageCount))) + 4)
 
           link
             .attr("stroke-opacity", (l: any) => {
@@ -196,7 +194,7 @@ export default function NeuralGraph({
             .attr("fill-opacity", 0.85)
             .attr("stroke-opacity", 0.5)
             .attr("stroke-width", 0.8)
-            .attr("r", Math.max(3, Math.min(10, d.messageCount / 2)))
+            .attr("r", Math.max(2, Math.min(6, Math.sqrt(d.messageCount))))
 
           link
             .attr("stroke-opacity", 0.08)
