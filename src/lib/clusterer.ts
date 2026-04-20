@@ -1,64 +1,254 @@
 import { Conversation } from "./types"
 
-function detectTopic(text: string): string {
-  const lower = text.toLowerCase()
+// clean and tokenize text
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w))
+}
 
-  // Tech subtopics
-  if (/cybersecurity|security|hacking|kali|nmap|wireshark|exploit|vulnerability|malware|firewall|penetration|pentest|ctf|reverse engineer|forensic|incident|threat|attack|defense|encryption|decrypt|cipher|hash|ssl|tls|certificate|authentication|authorization|oauth|jwt|xss|sql injection|csrf|buffer overflow|privilege escalation|payload|shellcode|rootkit|backdoor|trojan|ransomware|phishing|social engineering/.test(lower)) return "Cybersecurity"
+// compute term frequency for a document
+function termFrequency(tokens: string[]): Record<string, number> {
+  const tf: Record<string, number> = {}
+  tokens.forEach((t) => {
+    tf[t] = (tf[t] || 0) + 1
+  })
+  const total = tokens.length || 1
+  Object.keys(tf).forEach((t) => {
+    tf[t] = tf[t] / total
+  })
+  return tf
+}
 
-  if (/machine learning|neural network|deep learning|model|training|dataset|ai|artificial intelligence|nlp|natural language|computer vision|tensorflow|pytorch|scikit|keras|hugging face|llm|gpt|claude|chatgpt|embedding|vector|transformer|attention|reinforcement|supervised|unsupervised|classification|regression|clustering|feature|epoch|gradient|backprop|overfitting|underfitting|accuracy|precision|recall|f1/.test(lower)) return "AI & ML"
+// compute inverse document frequency across all documents
+function inverseDocumentFrequency(
+  documents: string[][]
+): Record<string, number> {
+  const idf: Record<string, number> = {}
+  const N = documents.length
 
-  if (/react|next|vue|angular|svelte|html|css|tailwind|bootstrap|sass|frontend|ui|ux|component|webpage|website|landing page|responsive|mobile design|figma|wireframe|prototype|design system|typography|color|layout|grid|flexbox|animation|transition|hover|click|button|form|input|modal|navbar|sidebar|dashboard|dark mode/.test(lower)) return "Web Dev"
+  documents.forEach((tokens) => {
+    const unique = new Set(tokens)
+    unique.forEach((t) => {
+      idf[t] = (idf[t] || 0) + 1
+    })
+  })
 
-  if (/sql|database|postgres|mysql|mongodb|redis|firebase|supabase|prisma|orm|query|schema|table|index|join|migration|crud|nosql|graphql|rest api|endpoint|backend|express|fastapi|django|flask|node|server|microservice|docker|kubernetes|nginx|load balancer/.test(lower)) return "Backend"
+  Object.keys(idf).forEach((t) => {
+    idf[t] = Math.log(N / idf[t])
+  })
 
-  if (/aws|azure|gcp|cloud|vercel|netlify|heroku|lambda|serverless|s3|ec2|iam|vpc|terraform|ansible|ci\/cd|github actions|devops|deployment|infrastructure|monitoring|logging|scaling|container|pipeline/.test(lower)) return "Cloud & DevOps"
+  return idf
+}
 
-  if (/python|javascript|typescript|java|c\+\+|c#|rust|golang|swift|kotlin|ruby|php|scala|haskell|assembly|arm|register|memory|pointer|heap|stack|binary|hex|bit|byte|compiler|interpreter|syntax|variable|loop|recursion|algorithm|data structure|linked list|tree|graph|sorting|searching|big o|complexity/.test(lower)) return "Programming"
+// compute tfidf vector for a document
+function tfidfVector(
+  tf: Record<string, number>,
+  idf: Record<string, number>
+): Record<string, number> {
+  const vector: Record<string, number> = {}
+  Object.keys(tf).forEach((t) => {
+    if (idf[t]) {
+      vector[t] = tf[t] * idf[t]
+    }
+  })
+  return vector
+}
 
-  if (/data|analytics|visualization|tableau|power bi|excel|pandas|numpy|matplotlib|seaborn|plotly|d3|dashboard|report|insight|metric|kpi|etl|pipeline|warehouse|spark|hadoop|kafka|airflow|dbt|looker|bi|business intelligence/.test(lower)) return "Data & Analytics"
+// cosine similarity between two vectors
+function cosineSimilarity(
+  a: Record<string, number>,
+  b: Record<string, number>
+): number {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+  let dot = 0
+  let magA = 0
+  let magB = 0
 
-  // Health subtopics
-  if (/workout|fitness|exercise|gym|muscle|cardio|running|yoga|stretching|weight|calories|protein|nutrition|diet|meal|supplement|vitamin|sleep|recovery|injury|pain|physio/.test(lower)) return "Fitness"
-  if (/mental|anxiety|depression|stress|therapy|mindfulness|meditation|emotion|mood|wellbeing|psychology|counseling|burnout|trauma|grief|loneliness/.test(lower)) return "Mental Health"
-  if (/doctor|hospital|medicine|symptom|diagnosis|prescription|surgery|nurse|clinic|appointment|checkup|blood|heart|lung|kidney|disease|condition|allergy|vaccine/.test(lower)) return "Medical"
+  keys.forEach((k) => {
+    const va = a[k] || 0
+    const vb = b[k] || 0
+    dot += va * vb
+    magA += va * va
+    magB += vb * vb
+  })
 
-  // Finance subtopics
-  if (/stock|invest|market|trading|portfolio|etf|dividend|crypto|bitcoin|ethereum|defi|nft|blockchain|fund|index/.test(lower)) return "Investing"
-  if (/budget|expense|savings|debt|income|tax|salary|mortgage|insurance|bank|loan|credit|cash|financial plan/.test(lower)) return "Personal Finance"
-  if (/startup|business|revenue|profit|loss|venture|funding|pitch|investor|valuation|acquisition|merger|entrepreneur/.test(lower)) return "Business"
+  if (magA === 0 || magB === 0) return 0
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB))
+}
 
-  // Career subtopics
-  if (/resume|interview|job|hire|recruiter|cover letter|linkedin|offer|application|portfolio/.test(lower)) return "Job Search"
-  if (/promotion|manager|leadership|team|meeting|workplace|performance|review|feedback|career growth/.test(lower)) return "Career Growth"
+// get top N terms from a tfidf vector
+function topTerms(vector: Record<string, number>, n: number): string[] {
+  return Object.entries(vector)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([term]) => term)
+}
 
-  // Creative subtopics
-  if (/write|essay|story|novel|fiction|poem|script|blog|content|narrative|character|plot|draft|edit|publish/.test(lower)) return "Writing"
-  if (/design|art|draw|paint|illustration|sketch|logo|brand|color|typography|ui|ux|figma|graphic|visual/.test(lower)) return "Design"
-  if (/music|song|lyrics|beat|produce|record|guitar|piano|melody|chord|mix|master/.test(lower)) return "Music"
+// map top terms to a human readable topic label
+function labelFromTerms(terms: string[]): string {
+  const termSet = new Set(terms)
 
-  // Learning subtopics
-  if (/math|calculus|algebra|statistics|probability|discrete|linear algebra|differential/.test(lower)) return "Math"
-  if (/study|exam|school|university|homework|assignment|lecture|notes|textbook|degree|grade|professor|course|tutorial/.test(lower)) return "School"
-  if (/research|paper|thesis|dissertation|experiment|hypothesis|analysis|science|physics|chemistry|biology|history|philosophy/.test(lower)) return "Research"
-
-  // Personal subtopics
-  if (/friend|family|relationship|love|breakup|dating|marriage|divorce|partner|spouse/.test(lower)) return "Relationships"
-  if (/goal|habit|routine|mindset|confidence|motivation|self|identity|purpose|meaning|grow|improve|productivity/.test(lower)) return "Self Improvement"
-  if (/travel|trip|vacation|adventure|explore|country|city|hotel|flight|itinerary/.test(lower)) return "Travel"
-  if (/food|recipe|cook|bake|restaurant|meal|cuisine|ingredient|kitchen/.test(lower)) return "Food"
+  if (terms.some((t) => TOPIC_KEYWORDS.cybersecurity.has(t))) return "Cybersecurity"
+  if (terms.some((t) => TOPIC_KEYWORDS.aiml.has(t))) return "AI & ML"
+  if (terms.some((t) => TOPIC_KEYWORDS.webdev.has(t))) return "Web Dev"
+  if (terms.some((t) => TOPIC_KEYWORDS.backend.has(t))) return "Backend"
+  if (terms.some((t) => TOPIC_KEYWORDS.cloud.has(t))) return "Cloud & DevOps"
+  if (terms.some((t) => TOPIC_KEYWORDS.data.has(t))) return "Data & Analytics"
+  if (terms.some((t) => TOPIC_KEYWORDS.programming.has(t))) return "Programming"
+  if (terms.some((t) => TOPIC_KEYWORDS.health.has(t))) return "Health"
+  if (terms.some((t) => TOPIC_KEYWORDS.finance.has(t))) return "Finance"
+  if (terms.some((t) => TOPIC_KEYWORDS.career.has(t))) return "Career"
+  if (terms.some((t) => TOPIC_KEYWORDS.creative.has(t))) return "Creative"
+  if (terms.some((t) => TOPIC_KEYWORDS.learning.has(t))) return "Learning"
+  if (terms.some((t) => TOPIC_KEYWORDS.personal.has(t))) return "Personal"
 
   return "Other"
 }
 
+// cluster conversations using tfidf similarity
 export function clusterConversations(conversations: Conversation[]): Conversation[] {
-  return conversations.map((convo) => {
+  if (conversations.length === 0) return []
+
+  // extract text from each conversation
+  const documents = conversations.map((convo) => {
     const text = [
       convo.title,
       convo.messages[0]?.content || "",
       convo.messages[1]?.content || "",
       convo.messages[2]?.content || "",
     ].join(" ")
-    return { ...convo, topic: detectTopic(text) }
+    return tokenize(text)
   })
+
+  // compute idf across all documents
+  const idf = inverseDocumentFrequency(documents)
+
+  // compute tfidf vector for each document
+  const vectors = documents.map((tokens) => {
+    const tf = termFrequency(tokens)
+    return tfidfVector(tf, idf)
+  })
+
+  // assign topic based on top terms in each vector
+  return conversations.map((convo, i) => {
+    const terms = topTerms(vectors[i], 10)
+    const topic = labelFromTerms(terms)
+    return { ...convo, topic }
+  })
+}
+
+// stop words to ignore
+const STOP_WORDS = new Set([
+  "the", "and", "for", "that", "this", "with", "from", "are", "was",
+  "were", "have", "has", "had", "not", "but", "what", "when", "where",
+  "who", "how", "can", "could", "would", "should", "will", "may", "might",
+  "does", "did", "its", "also", "just", "like", "use", "used", "using",
+  "make", "made", "need", "want", "get", "got", "let", "set", "see",
+  "one", "two", "new", "all", "any", "more", "some", "out", "into",
+  "than", "then", "them", "they", "their", "there", "here", "your",
+  "you", "our", "about", "which", "very", "well", "good", "know",
+  "think", "help", "try", "way", "much", "many", "say", "said",
+  "now", "still", "even", "back", "way", "after", "before", "through",
+  "over", "under", "each", "other", "same", "different", "work",
+  "working", "right", "left", "between", "while", "without", "within",
+  "something", "nothing", "everything", "anything", "someone", "anyone",
+])
+
+// topic keyword sets for label assignment
+const TOPIC_KEYWORDS = {
+  cybersecurity: new Set([
+    "security", "hack", "exploit", "vulnerability", "malware", "firewall",
+    "encryption", "decrypt", "cipher", "hash", "ssl", "tls", "certificate",
+    "authentication", "xss", "injection", "csrf", "overflow", "payload",
+    "shellcode", "rootkit", "backdoor", "trojan", "ransomware", "phishing",
+    "pentest", "ctf", "forensic", "kali", "nmap", "wireshark", "metasploit",
+    "burp", "reverse", "privilege", "escalation", "oscp", "cve", "zero",
+  ]),
+  aiml: new Set([
+    "machine", "learning", "neural", "model", "training", "dataset", "deep",
+    "nlp", "language", "computer", "vision", "tensorflow", "pytorch", "keras",
+    "llm", "gpt", "embedding", "vector", "transformer", "attention",
+    "reinforcement", "supervised", "unsupervised", "classification",
+    "regression", "clustering", "gradient", "backprop", "overfitting",
+    "accuracy", "precision", "recall", "inference", "fine", "tuning",
+    "prompt", "token", "claude", "openai", "hugging", "bert", "stable",
+  ]),
+  webdev: new Set([
+    "react", "next", "vue", "angular", "svelte", "html", "css", "tailwind",
+    "bootstrap", "frontend", "component", "webpage", "website", "responsive",
+    "figma", "design", "layout", "grid", "flexbox", "animation", "button",
+    "form", "modal", "navbar", "dashboard", "dark", "styled", "emotion",
+    "chakra", "radix", "shadcn", "framer", "gsap",
+  ]),
+  backend: new Set([
+    "api", "server", "database", "sql", "postgres", "mysql", "mongodb",
+    "redis", "firebase", "prisma", "orm", "query", "schema", "table",
+    "endpoint", "express", "fastapi", "django", "flask", "node", "rest",
+    "graphql", "microservice", "nginx", "load", "balancer", "websocket",
+    "middleware", "cors", "jwt", "oauth", "session", "cookie", "cache",
+  ]),
+  cloud: new Set([
+    "aws", "azure", "gcp", "cloud", "vercel", "netlify", "lambda",
+    "serverless", "docker", "kubernetes", "terraform", "ansible", "cicd",
+    "github", "actions", "devops", "deployment", "infrastructure", "monitoring",
+    "logging", "scaling", "container", "pipeline", "vpc", "iam", "s3",
+    "ec2", "eks", "ecs", "fargate", "cloudfront", "route53",
+  ]),
+  data: new Set([
+    "data", "analytics", "visualization", "tableau", "power", "pandas",
+    "numpy", "matplotlib", "seaborn", "plotly", "dashboard", "report",
+    "metric", "kpi", "etl", "pipeline", "warehouse", "spark", "kafka",
+    "airflow", "dbt", "looker", "bigquery", "snowflake", "databricks",
+    "excel", "csv", "json", "parquet", "aggregation", "pivot",
+  ]),
+  programming: new Set([
+    "python", "javascript", "typescript", "java", "rust", "golang", "swift",
+    "kotlin", "assembly", "arm", "register", "memory", "pointer", "heap",
+    "stack", "binary", "hex", "compiler", "interpreter", "algorithm",
+    "structure", "linked", "list", "tree", "graph", "sorting", "searching",
+    "complexity", "recursion", "dynamic", "programming", "leetcode", "dsa",
+  ]),
+  health: new Set([
+    "workout", "fitness", "exercise", "gym", "muscle", "cardio", "running",
+    "yoga", "diet", "nutrition", "calories", "protein", "sleep", "recovery",
+    "injury", "pain", "doctor", "medicine", "symptom", "diagnosis", "therapy",
+    "mental", "anxiety", "depression", "stress", "meditation", "mindfulness",
+    "hospital", "surgery", "vitamin", "supplement", "weight", "health",
+  ]),
+  finance: new Set([
+    "money", "invest", "stock", "crypto", "bitcoin", "market", "trading",
+    "portfolio", "dividend", "savings", "debt", "income", "tax", "budget",
+    "mortgage", "insurance", "bank", "loan", "credit", "salary", "revenue",
+    "profit", "loss", "fund", "etf", "startup", "venture", "funding",
+    "valuation", "acquisition", "business", "finance", "wealth",
+  ]),
+  career: new Set([
+    "resume", "interview", "job", "hire", "recruiter", "linkedin", "offer",
+    "career", "internship", "promotion", "manager", "workplace", "salary",
+    "negotiation", "performance", "review", "feedback", "onboarding",
+    "remote", "startup", "company", "team", "meeting", "deadline",
+  ]),
+  creative: new Set([
+    "write", "essay", "story", "novel", "poem", "script", "blog", "content",
+    "design", "art", "draw", "paint", "music", "song", "lyrics", "video",
+    "film", "animation", "brand", "logo", "typography", "illustration",
+    "photography", "creative", "fiction", "narrative", "character", "plot",
+  ]),
+  learning: new Set([
+    "study", "learn", "course", "exam", "school", "university", "homework",
+    "assignment", "lecture", "research", "notes", "textbook", "degree",
+    "grade", "professor", "student", "tutorial", "math", "physics",
+    "chemistry", "biology", "history", "philosophy", "science", "paper",
+    "thesis", "dissertation", "experiment", "hypothesis",
+  ]),
+  personal: new Set([
+    "friend", "family", "relationship", "love", "breakup", "dating",
+    "marriage", "divorce", "partner", "goal", "habit", "routine", "mindset",
+    "confidence", "motivation", "self", "identity", "purpose", "travel",
+    "trip", "vacation", "food", "recipe", "cook", "restaurant", "personal",
+    "life", "advice", "help", "emotion", "feel", "grow",
+  ]),
 }
