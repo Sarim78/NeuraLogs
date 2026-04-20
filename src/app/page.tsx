@@ -14,18 +14,18 @@ export default function Home() {
     useBrainData()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [showBanner, setShowBanner] = useState(true)
   const [tooltip, setTooltip] = useState<{
     node: GraphNode
     x: number
     y: number
   } | null>(null)
 
-  const selectedConvo =
-    conversations.find((c) => c.id === selectedId) || null
+  const selectedConvo = selectedId
+    ? conversations.find((c) => c.id === selectedId) ?? null
+    : null
 
-  const isDemo = status === "idle"
-  const isLoading = status === "unzipping" || status === "parsing" || status === "clustering"
+  const isLoading =
+    status === "unzipping" || status === "parsing" || status === "clustering"
 
   function handleNodeClick(id: string) {
     setSelectedId(id)
@@ -41,31 +41,58 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen bg-[#0a0a0a] overflow-hidden">
-    {/* top bar */}
-    <div className="absolute top-0 left-0 right-0 z-40 flex flex-col md:flex-row md:items-center md:justify-between px-4 md:px-6 py-2 md:h-12 border-b border-white/5 backdrop-blur-sm gap-0.5">
-      <div className="text-center md:text-left md:absolute md:left-1/2 md:-translate-x-1/2">
-        <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
-          Neuralogs
-        </h1>
-        <p className="text-white/30 text-xs">your mind, visualized</p>
+
+      {/* top bar */}
+      <div className="absolute top-0 left-0 right-0 z-40 border-b border-white/5 backdrop-blur-sm">
+        
+        {/* mobile layout */}
+        <div className="flex md:hidden flex-col items-center py-2 px-4 gap-0.5">
+          <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
+            Neuralogs
+          </h1>
+          <p className="text-white/30 text-xs">your mind, visualized</p>
+          <p className="text-white/30 text-xs mt-0.5">
+            All processing happens locally. No data transmitted.
+          </p>
+        </div>
+
+        {/* desktop layout */}
+        <div className="hidden md:flex items-center justify-between px-6 h-12">
+          <p className="text-white font-bold text-xs">
+            All processing happens locally. No data is collected or transmitted.
+          </p>
+          <div className="absolute left-1/2 -translate-x-1/2 text-center">
+            <h1 className="text-white text-sm font-semibold tracking-widest uppercase">
+              Neuralogs
+            </h1>
+            <p className="text-white/30 text-xs">your mind, visualized</p>
+          </div>
+          {graphData ? (
+            <button
+              onClick={reset}
+              className="text-white/40 hover:text-white text-xs transition-colors border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5"
+            >
+              Reset
+            </button>
+          ) : (
+            <div />
+          )}
+        </div>
       </div>
-      <p className="text-white/40 font-bold text-xs text-center md:text-left order-last md:order-first">
-        All processing happens locally. No data is collected or transmitted.
-      </p>
+
+      {/* mobile reset button */}
       {graphData && (
         <button
           onClick={reset}
-          className="text-white/40 hover:text-white text-xs transition-colors border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 self-end md:self-auto"
+          className="md:hidden absolute top-2 right-4 z-50 text-white/40 hover:text-white text-xs transition-colors border border-white/10 rounded-lg px-3 py-1.5"
         >
           Reset
         </button>
       )}
-      {!graphData && <div className="hidden md:block" />}
-    </div>
 
       {/* upload or loading screen */}
       {!graphData ? (
-        <div className="absolute inset-0 flex items-center justify-center px-8">
+        <div className="absolute inset-0 flex items-center justify-center px-8 pt-20 md:pt-12">
           <div className="w-full max-w-md flex flex-col gap-4">
             {isLoading ? (
               <div className="flex flex-col items-center gap-6">
@@ -97,7 +124,7 @@ export default function Home() {
       ) : (
         <>
           {/* neural graph */}
-          <div className="absolute inset-0 pt-12">
+          <div className="absolute inset-0 pt-20 md:pt-12">
             <NeuralGraph
               data={graphData}
               onNodeClick={handleNodeClick}
@@ -108,8 +135,8 @@ export default function Home() {
           {/* topic legend */}
           <TopicLegend />
 
-          {/* hint */}
-          <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/20 text-xs z-40 pointer-events-none">
+          {/* hint — hidden on mobile */}
+          <p className="hidden md:block absolute bottom-6 left-1/2 -translate-x-1/2 text-white/20 text-xs z-40 pointer-events-none whitespace-nowrap">
             Click a node to read the conversation. Scroll to zoom.
           </p>
 
@@ -119,16 +146,18 @@ export default function Home() {
             onClose={() => setSelectedId(null)}
           />
 
-          {/* tooltip */}
+          {/* tooltip — hidden on mobile */}
           {tooltip && (
-            <NodeTooltip
-              title={tooltip.node.title}
-              topic={tooltip.node.topic}
-              messageCount={tooltip.node.messageCount}
-              source={tooltip.node.source}
-              x={tooltip.x}
-              y={tooltip.y}
-            />
+            <div className="hidden md:block">
+              <NodeTooltip
+                title={tooltip.node.title}
+                topic={tooltip.node.topic}
+                messageCount={tooltip.node.messageCount}
+                source={tooltip.node.source}
+                x={tooltip.x}
+                y={tooltip.y}
+              />
+            </div>
           )}
         </>
       )}
