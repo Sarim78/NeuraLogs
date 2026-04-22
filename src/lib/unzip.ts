@@ -1,13 +1,16 @@
 import JSZip from "jszip"
 
 export async function extractConversations(file: File): Promise<any[]> {
-  // load the zip file
   const zip = await JSZip.loadAsync(file)
 
-  // find conversations.json inside the zip
-  const conversationsFile =
-    zip.file("conversations.json") ||
-    zip.file(/conversations\.json/)[0]
+  // search all files in zip for conversations.json at any depth
+  let conversationsFile = null
+
+  zip.forEach((relativePath, zipEntry) => {
+    if (!zipEntry.dir && relativePath.endsWith("conversations.json")) {
+      conversationsFile = zipEntry
+    }
+  })
 
   if (!conversationsFile) {
     throw new Error(
@@ -15,13 +18,15 @@ export async function extractConversations(file: File): Promise<any[]> {
     )
   }
 
-  // extract the raw text
-  const raw = await conversationsFile.async("text")
+  const raw = await (conversationsFile as any).async("text")
 
-  // parse and return
   try {
-    return JSON.parse(raw)
-  } catch {
-    throw new Error("conversations.json is not valid JSON.")
+    const parsed = JSON.parse(raw)
+    // handle both array format and object with conversations key
+    if (Array.isArray(parsed)) return parsed
+    if (parsed.conversations && Array.isArray(parsed.conversations)) return parsed.conversations
+    throw new Error("Unexpected format in conversations.json.")
+  } catch (e: any) {
+    throw new Error(e.message || "conversations.json is not valid JSON.")
   }
 }
